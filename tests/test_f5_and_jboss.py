@@ -64,3 +64,51 @@ async def test_f5_and_richfaces_detection():
 
     # JBoss AS
     assert "JBoss Application Server" in names
+
+
+@pytest.mark.asyncio
+async def test_eproc_and_infraphp_detection():
+    detector = HeaderDetector()
+    mock_data = {
+        "headers": {
+            "set-cookie": "PHPSESSID=abcdef123456; Path=/, TS019adea6=0150481ac6; Path=/",
+        },
+        "cookies": {
+            "PHPSESSID": "abcdef123456",
+            "TS019adea6": "0150481ac6",
+        },
+        "body": """
+        <html>
+        <head>
+            <title>:: eproc - TJMG ::</title>
+            <script src="js/dist/runtime.29e3254c61c00a76ae7c.js"></script>
+            <script src="js/dist/npm.axios.5be569efb5d72b6a3b1f.js"></script>
+            <script src="js/dist/npm.bootstrap.83f4700d85eceac25b4a.js"></script>
+            <script src="infra_js/InfraUtil.js?9.22.0-3.0.8"></script>
+        </head>
+        <body class="divInfraAreaGlobal">
+            <div data-turbo="false">eproc</div>
+        </body>
+        </html>
+        """,
+        "probe_404_body": '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN"><html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><p>The requested URL was not found on this server.</p></body></html>',
+    }
+
+    items = await detector.detect_url("https://mock-eproc.local", mock_data)
+    names = {item.name: item for item in items}
+
+    assert "PHP" in names
+    assert names["PHP"].category == TechCategory.LANGUAGES
+
+    assert "InfraPHP" in names
+    assert names["InfraPHP"].version == "9.22.0-3.0.8"
+
+    assert "eproc (Processo Eletrônico)" in names
+    assert names["eproc (Processo Eletrônico)"].version == "9.22.0"
+
+    assert "Webpack" in names
+    assert "Bootstrap" in names
+    assert "Hotwired Turbo" in names
+
+    assert "F5 BIG-IP ASM (WAF)" in names
+    assert "Apache HTTP Server" in names

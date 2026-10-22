@@ -117,9 +117,10 @@ BODY_META_PATTERNS = [
 # Padrões para comentários de cabeçalho em arquivos JS estáticos
 SCRIPT_HEADER_VERSION_PATTERNS = {
     "jQuery": [
-        r"/\*!\s*jQuery\s+v([0-9\.]+)",
-        r"/\*!\s*jQuery\s+JavaScript\s+Library\s+v([0-9\.]+)",
-        r"jQuery\s+v?([0-9\.]+)\b",
+        r"/\*!\s*(?:\*\s*)?jQuery\s+v([0-9\.]+)",
+        r"/\*!\s*(?:\*\s*)?jQuery\s+JavaScript\s+Library\s+v([0-9\.]+)",
+        r"jQuery(?:\s+JavaScript\s+Library)?\s+v?([0-9\.]+)",
+        r"jquery[/-]([0-9\.]+)(?:\.slim|\.min)?\.js",
     ],
     "jQuery UI": [
         r"/\*!\s*jQuery\s+UI[ -]v?([0-9\.]+)",
@@ -139,8 +140,25 @@ SCRIPT_HEADER_VERSION_PATTERNS = {
         r"PrintArea\s+v?([0-9\.]+)",
     ],
     "Bootstrap": [
-        r"/\*!\s*Bootstrap\s+v([0-9\.]+)",
+        r"/\*!\s*(?:\*\s*)?Bootstrap\s+v([0-9\.]+)",
         r"Bootstrap\s+v?([0-9\.]+)",
+    ],
+    "Axios": [
+        r"/\*!\s*Axios\s+v?([0-9\.]+)",
+        r"axios\s+v?([0-9\.]+)",
+    ],
+    "Popper.js": [
+        r"@version\s+([0-9\.]+)",
+        r"popper[/-]([0-9\.]+)",
+        r"Popper(?:\.js)?\s+v?([0-9\.]+)",
+    ],
+    "InfraPHP": [
+        r"InfraUtil\.js\?([0-9\.\-_]+)",
+        r"infra_js/.*(?:\?v?=|\?)([0-9\.\-_]+)",
+    ],
+    "eproc (Processo Eletrônico)": [
+        r"InfraUtil\.js\?([0-9\.]+)",
+        r"infra_js/.*(?:\?v?=|\?)([0-9\.]+)",
     ],
     "PrimeFaces": [
         r"/\*!\s*PrimeFaces[ a-zA-Z]*v?([0-9\.]+)",
@@ -170,10 +188,12 @@ SCRIPT_HEADER_VERSION_PATTERNS = {
         r"glider(?:-js)?@([0-9\.]+)",
     ],
     "Moment.js": [
+        r"//! moment\.js\s*\n//! version\s*:\s*([0-9\.]+)",
         r"/\*!\s*version\s*:\s*([0-9\.]+).*momentjs\.com",
         r"moment\.js\s+v?([0-9\.]+)",
     ],
     "Lodash": [
+        r"Lodash\s+<https://lodash\.com/>\s*\n\s*\*\s*Copyright.*?\n\s*\*\s*Version\s+([0-9\.]+)",
         r"/\*!\s*lodash\s+v?([0-9\.]+)",
         r"lodash\s+([0-9\.]+)",
     ],
@@ -326,14 +346,14 @@ BODY_CONTENT_PATTERNS = [
 
     # JavaScript Libraries & Frameworks
     (
-        r'(?:jquery(?:-([0-9\.]+))?(?:\.slim|\.min)?\.js|window\.jQuery\b|code\.jquery\.com|jquery\/([0-9\.]+)\/jquery)',
+        r'(?:jquery(?:-([0-9\.]+))?(?:\.slim|\.min)?\.js|window\.jQuery\b|code\.jquery\.com|jquery\/([0-9\.]+)\/jquery|npm\.jquery\b)',
         "jQuery",
         TechCategory.FRAMEWORKS,
         "Fast, small, and feature-rich JavaScript library",
-        r'(?:jquery[/-]([0-9\.]+)(?:\.slim|\.min)?\.js|jquery\.min\.js\?v=([0-9\.]+))'
+        r'(?:jquery[/-]([0-9\.]+)(?:\.slim|\.min)?\.js|jquery\.min\.js\?v=([0-9\.]+)|jQuery\s+JavaScript\s+Library\s+v?([0-9\.]+))'
     ),
     (
-        r'(?:jquery-ui(?:-([0-9\.]+))?(?:\.min)?\.js|jquery-ui\.css|/ui/[0-9\.]+/jquery-ui)',
+        r'(?:jquery-ui(?:-([0-9\.]+))?(?:\.min)?\.js|jquery-ui\.css|/ui/[0-9\.]+/jquery-ui|npm\.jquery-ui\b|bundle-jquery-ui)',
         "jQuery UI",
         TechCategory.FRAMEWORKS,
         "Curated set of user interface interactions, effects, and widgets built on jQuery",
@@ -403,17 +423,87 @@ BODY_CONTENT_PATTERNS = [
         None
     ),
     (
-        r'bootstrap(?:\.min)?\.(?:css|js)',
+        r'(?:bootstrap(?:\.min)?\.(?:css|js)|npm\.bootstrap\b|bundle-bs4)',
         "Bootstrap",
         TechCategory.FRAMEWORKS,
         "Bootstrap CSS & Component Library",
-        r'bootstrap[/-]([0-9\.]+)'
+        r'(?<![a-zA-Z0-9_\-])bootstrap[/-]([0-9]+\.[0-9]+(?:\.[0-9]+)?)(?:\.min)?\.(?:js|css)|Bootstrap\s+v?([0-9]+\.[0-9]+(?:\.[0-9]+)?)'
+    ),
+    (
+        r'(?:moment(?:\.min)?\.js|npm\.moment\b)',
+        "Moment.js",
+        TechCategory.FRAMEWORKS,
+        "JavaScript date and time manipulation library",
+        r'moment[/-]([0-9\.]+)'
+    ),
+    (
+        r'(?:lodash(?:\.min)?\.js|npm\.lodash\b)',
+        "Lodash",
+        TechCategory.FRAMEWORKS,
+        "Modern JavaScript utility library delivering modularity, performance & extras",
+        r'lodash[/-]([0-9\.]+)'
     ),
     (
         r'tailwindcss',
         "Tailwind CSS",
         TechCategory.FRAMEWORKS,
         "Tailwind CSS Utility Framework",
+        None
+    ),
+    (
+        r'(?:infra_js/InfraUtil\.js|INFRA_PATH_JS|divInfraAreaGlobal|InfraCookie\.js|\binfra_js/\b|\binfra_css/\b)',
+        "InfraPHP",
+        TechCategory.FRAMEWORKS,
+        "Framework PHP corporativo para eproc e SEI desenvolvido pelo TRF4",
+        r'infra_js/[a-zA-Z0-9_\-]+\.js\?([0-9\.\-_]+)'
+    ),
+    (
+        r'(?::: eproc -|Sistema Eproc|\beprocChunk\b|\bwebpackChunkeproc\b|\bnpm\.trf4\b)',
+        "eproc (Processo Eletrônico)",
+        TechCategory.FRAMEWORKS,
+        "Sistema de Processo Judicial Eletrônico (TRF4 / Tribunais)",
+        r'infra_js/[a-zA-Z0-9_\-]+\.js\?([0-9\.]+)'
+    ),
+    (
+        r'(?:webpackChunk|runtime\.[a-f0-9]+\.js|js/dist/runtime)',
+        "Webpack",
+        TechCategory.FRAMEWORKS,
+        "Static module bundler for JavaScript applications",
+        None
+    ),
+    (
+        r'(?:axios(?:\.min)?\.js|npm\.axios\.)',
+        "Axios",
+        TechCategory.FRAMEWORKS,
+        "Promise based HTTP client for browser and node.js",
+        r'axios[/-]([0-9\.]+)'
+    ),
+    (
+        r'(?:npm\.hotwired|@hotwired/turbo|turbo\.min\.js|\bdata-turbo\b)',
+        "Hotwired Turbo",
+        TechCategory.FRAMEWORKS,
+        "High-performance HTML-over-the-wire frontend framework",
+        None
+    ),
+    (
+        r'(?:popper(?:\.min)?\.js|npm\.popper\.js)',
+        "Popper.js",
+        TechCategory.FRAMEWORKS,
+        "Tooltip & popover positioning library",
+        r'popper[/-]([0-9\.]+)'
+    ),
+    (
+        r'(?:jstree(?:\.min)?\.js|npm\.jstree)',
+        "jsTree",
+        TechCategory.FRAMEWORKS,
+        "Interactive tree component library for jQuery",
+        r'jstree[/-]([0-9\.]+)'
+    ),
+    (
+        r'(?:govbr\.css|brasil\.gov\.br|barra-brasil)',
+        "Padrão Digital de Governo (Gov.br)",
+        TechCategory.OTHER,
+        "Padrão Digital e Design System do Governo Brasileiro",
         None
     ),
 ]
@@ -441,8 +531,8 @@ IIS_OS_VERSION_MAP = {
 }
 
 SCRIPT_NAME_KEYWORDS = {
-    "jQuery": ["jquery.js", "jquery.min.js", "/jquery/"],
-    "jQuery UI": ["jquery-ui", "jquery.ui", "/ui/"],
+    "jQuery": ["npm.jquery.", "jquery.min.js", "jquery.js", "/jquery/"],
+    "jQuery UI": ["npm.jquery-ui.", "jquery-ui", "jquery.ui", "/ui/"],
     "jQuery EasyUI": ["easyui"],
     "jQuery Masked Input Plugin": ["maskedinput"],
     "jQuery Print Element Plugin": ["printelement"],
@@ -450,11 +540,17 @@ SCRIPT_NAME_KEYWORDS = {
     "Ajax4jsf": ["ajax4jsf", "a4j"],
     "RichFaces": ["richfaces"],
     "PrimeFaces": ["primefaces"],
-    "Bootstrap": ["bootstrap"],
+    "Bootstrap": ["npm.bootstrap.", "bootstrap.bundle", "bootstrap.min.js", "bootstrap.js", "bundle-bs4"],
+    "Axios": ["npm.axios.", "axios.min.js", "axios.js"],
+    "InfraPHP": ["infrautil", "infracookie"],
+    "eproc (Processo Eletrônico)": ["infrautil"],
+    "Hotwired Turbo": ["hotwired"],
+    "Popper.js": ["npm.popper.js", "popper.min.js", "popper.js"],
+    "jsTree": ["npm.jstree", "jstree.min.js", "jstree.js"],
     "Modernizr": ["modernizr"],
     "Glider.js": ["glider"],
-    "Moment.js": ["moment"],
-    "Lodash": ["lodash"],
+    "Moment.js": ["npm.moment.", "moment.min.js", "moment.js"],
+    "Lodash": ["npm.lodash.", "lodash.min.js", "lodash.js"],
     "Vue.js": ["vue"],
     "React": ["react"],
     "JavaServer Faces (JSF)": ["jsf"],
@@ -593,6 +689,22 @@ class HeaderDetector(BaseDetector):
                         description="Apache Tomcat Servlet Container",
                     )
                 )
+
+            if not any(it.name == "Apache HTTP Server" for it in items):
+                if re.search(r"<p>The requested URL was not found on this server\.</p>", probe_body, re.IGNORECASE) or \
+                   re.search(r"<address>Apache(?:/([0-9\.]+))?", probe_body, re.IGNORECASE):
+                    m_ap = re.search(r"<address>Apache(?:/([0-9\.]+))?", probe_body, re.IGNORECASE)
+                    ap_ver = clean_version(m_ap.group(1)) if m_ap and m_ap.group(1) else None
+                    items.append(
+                        TechItem(
+                            name="Apache HTTP Server",
+                            category=TechCategory.WEB_SERVERS,
+                            version=ap_ver,
+                            source="HTTP 404 Response Signature (Apache)",
+                            confidence=0.85,
+                            description="Apache HTTP Server",
+                        )
+                    )
 
         # 2. Analisa Header "X-Powered-By"
         powered_val = headers.get("x-powered-by", "")
@@ -760,7 +872,18 @@ class HeaderDetector(BaseDetector):
                                 headers={"Range": "bytes=0-1024"},
                                 timeout=4.0,
                             )
-                            chunk = script_resp.text[:1024]
+                            chunk = script_resp.text[:2048]
+                            # Suporte a arquivos .LICENSE.txt gerados pelo Webpack / Terser
+                            m_lic = re.search(r"For license information please see\s+([^\s\*]+\.LICENSE\.txt)", chunk, re.IGNORECASE)
+                            if m_lic:
+                                lic_file = m_lic.group(1)
+                                try:
+                                    lic_url = urljoin(resolved_src, lic_file)
+                                    lic_resp = await client.get(lic_url, timeout=3.0)
+                                    chunk = lic_resp.text[:4096] + "\n" + chunk
+                                except Exception:
+                                    pass
+
                             for pat in patterns:
                                 vm = re.search(pat, chunk, re.IGNORECASE)
                                 if vm:
