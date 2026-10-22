@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import httpx
 
@@ -139,6 +139,15 @@ class ScannerService:
                 response_data["headers"] = dict(resp.headers)
                 response_data["cookies"] = dict(resp.cookies)
                 response_data["body"] = resp.text
+
+                # Probe rápido para descobrir banners de servidores ocultos em páginas de erro (ex: JBoss, Tomcat)
+                try:
+                    probe_url = urljoin(target_url, "/__app_stack_finder_probe_404__")
+                    probe_resp = await client.get(probe_url, headers=req_headers, timeout=3.5)
+                    response_data["probe_404_body"] = probe_resp.text[:4096]
+                    response_data["probe_404_headers"] = dict(probe_resp.headers)
+                except Exception:
+                    pass
 
                 for detector in self.detectors:
                     if detector.supports_url:

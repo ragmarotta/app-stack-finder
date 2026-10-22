@@ -15,14 +15,17 @@ def clean_version(raw_version: Optional[str]) -> Optional[str]:
     if not raw_version:
         return None
     cleaned = raw_version.strip()
+    # Converte padrão 3_3_3 para 3.3.3 (comum no RichFaces/a4j)
+    if re.search(r"^\d+_\d+", cleaned):
+        cleaned = cleaned.replace("_", ".")
     # Remove prefixos comuns de dependências npm, cargo, pip, composer
     cleaned = re.sub(r"^[~^><=!v\s]+", "", cleaned)
     # Remove sufixos como -alpine, -slim, etc.
     cleaned = re.sub(r"-(alpine|slim|bullseye|bookworm|buster|windowsservercore|nanoserver)[a-zA-Z0-9\.\-]*$", "", cleaned, flags=re.IGNORECASE)
-    # Extrai números de versão
-    match = re.search(r"(\d+(?:\.\d+)+)", cleaned)
-    if match:
-        return match.group(1)
+    # Extrai números de versão com tags de release opcionais (.GA, .Final, -RELEASE)
+    match_full = re.search(r"(\d+(?:\.\d+)+(?:[\.\-][a-zA-Z0-9]+)*)", cleaned)
+    if match_full:
+        return match_full.group(1)
     match_single = re.search(r"^(\d+)", cleaned)
     if match_single:
         return match_single.group(1)

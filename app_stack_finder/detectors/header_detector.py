@@ -25,8 +25,13 @@ SERVER_PATTERNS = [
     (r"apache-coyote(?:/([0-9\.]+))?|tomcat(?:/([0-9\.]+))?", "Apache Tomcat", TechCategory.WEB_SERVERS, "Java Servlet and JSP container"),
     (r"jetty(?:/([0-9\.]+))?", "Jetty", TechCategory.WEB_SERVERS, "Java HTTP server and Servlet container"),
     (r"wildfly(?:/([0-9\.]+))?", "WildFly", TechCategory.WEB_SERVERS, "Flexible, lightweight Java application server"),
-    (r"jboss(?:/([0-9\.]+))?", "JBoss", TechCategory.WEB_SERVERS, "Java EE application server"),
+    (r"jboss\s*(?:web)?(?:/([0-9\.]+([a-zA-Z0-9\.\-_]+)?))?", "JBoss Web", TechCategory.WEB_SERVERS, "JBoss Web Server / Application Container"),
     (r"glassfish(?:/([0-9\.]+))?", "GlassFish", TechCategory.WEB_SERVERS, "Java EE reference application server"),
+    (r"big-?ip", "F5 BIG-IP", TechCategory.INFRASTRUCTURE, "F5 BIG-IP Application Delivery Controller"),
+    (r"f5-trafficshield", "F5 BIG-IP TrafficShield", TechCategory.SECURITY, "F5 Web Application Firewall"),
+    (r"citrix", "Citrix NetScaler (ADC)", TechCategory.INFRASTRUCTURE, "Citrix NetScaler ADC / Load Balancer"),
+    (r"fortiweb", "Fortinet FortiWeb (WAF)", TechCategory.SECURITY, "Fortinet FortiWeb Web Application Firewall"),
+    (r"barracuda", "Barracuda WAF", TechCategory.SECURITY, "Barracuda Web Application Firewall"),
 ]
 
 POWERED_BY_PATTERNS = [
@@ -35,7 +40,7 @@ POWERED_BY_PATTERNS = [
     (r"php(?:/([0-9\.]+))?", "PHP", TechCategory.LANGUAGES, "PHP Hypertext Preprocessor"),
     (r"asp\.net", "ASP.NET", TechCategory.FRAMEWORKS, "Microsoft .NET Web Platform"),
     (r"servlet(?:/([0-9\.]+))?", "Java Servlet", TechCategory.FRAMEWORKS, "Java Servlet Platform"),
-    (r"jboss(?:-as)?(?:/([0-9\.]+))?", "JBoss", TechCategory.WEB_SERVERS, "JBoss Application Server"),
+    (r"jboss(?:-as)?(?:/([0-9\.]+([a-zA-Z0-9\.\-_]+)?))?", "JBoss", TechCategory.WEB_SERVERS, "JBoss Application Server"),
     (r"wildfly(?:/([0-9\.]+))?", "WildFly", TechCategory.WEB_SERVERS, "WildFly Application Server"),
     (r"undertow(?:/([0-9\.]+))?", "Undertow", TechCategory.WEB_SERVERS, "Lightweight blocking/non-blocking web server in Java"),
     (r"phusion passenger(?:/([0-9\.]+))?", "Phusion Passenger", TechCategory.WEB_SERVERS, "Web app server for Ruby/Python/Node"),
@@ -56,6 +61,10 @@ HEADER_SIGNATURES = [
     ("x-envoy-upstream-service-time", "Envoy Proxy", TechCategory.WEB_SERVERS, "Envoy Service Proxy"),
     ("x-varnish", "Varnish", TechCategory.WEB_SERVERS, "Varnish HTTP Cache Reverse Proxy"),
     ("liferay-portal", "Liferay", TechCategory.FRAMEWORKS, "Liferay Enterprise Portal"),
+    ("x-wa-info", "F5 BIG-IP WebAccelerator", TechCategory.INFRASTRUCTURE, "F5 BIG-IP Traffic Acceleration"),
+    ("x-cnection", "F5 BIG-IP", TechCategory.INFRASTRUCTURE, "F5 BIG-IP ADC connection header"),
+    ("x-iinfo", "Imperva Incapsula (WAF)", TechCategory.SECURITY, "Imperva Incapsula WAF tracking header"),
+    ("x-fortigate", "Fortinet FortiGate", TechCategory.SECURITY, "Fortinet Security Gateway"),
 ]
 
 COOKIE_SIGNATURES = [
@@ -67,9 +76,28 @@ COOKIE_SIGNATURES = [
     ("connect.sid", "Express", TechCategory.FRAMEWORKS, "Express.js session cookie"),
     ("asp.net_sessionid", "ASP.NET", TechCategory.FRAMEWORKS, "ASP.NET session cookie"),
     (".aspnetcore.antiforgery", "ASP.NET Core", TechCategory.FRAMEWORKS, "ASP.NET Core antiforgery"),
-    ("cf_clearance", "Cloudflare", TechCategory.SECURITY, "Cloudflare bot management clearance"),
+    
+    # Load Balancers & WAFs: F5 Networks, Citrix, Fortinet, Barracuda, Imperva, Radware, AWS
+    ("f5_cspm", "F5 BIG-IP", TechCategory.INFRASTRUCTURE, "F5 BIG-IP Client-Side Performance Monitoring & Bot Defense"),
+    ("bigipserver", "F5 BIG-IP (LTM)", TechCategory.INFRASTRUCTURE, "F5 BIG-IP Local Traffic Manager persistence"),
+    ("ts01", "F5 BIG-IP ASM (WAF)", TechCategory.SECURITY, "F5 BIG-IP Application Security Manager (WAF) cookie"),
+    ("ts", "F5 BIG-IP ASM (WAF)", TechCategory.SECURITY, "F5 BIG-IP Application Security Manager (WAF) cookie"),
+    ("nsc_", "Citrix NetScaler (ADC)", TechCategory.INFRASTRUCTURE, "Citrix NetScaler Application Delivery Controller"),
+    ("citrix_ns_id", "Citrix NetScaler (ADC)", TechCategory.INFRASTRUCTURE, "Citrix NetScaler session cookie"),
+    ("fortiwafsid", "Fortinet FortiWeb (WAF)", TechCategory.SECURITY, "Fortinet FortiWeb Web Application Firewall"),
+    ("bni__barracuda_lb_cookie", "Barracuda Load Balancer", TechCategory.INFRASTRUCTURE, "Barracuda Load Balancer persistence"),
+    ("bnis_", "Barracuda Web Application Firewall (WAF)", TechCategory.SECURITY, "Barracuda WAF cookie"),
+    ("barra_counter_session", "Barracuda WAF", TechCategory.SECURITY, "Barracuda Web Application Firewall"),
+    ("incap_ses_", "Imperva Incapsula (WAF/CDN)", TechCategory.SECURITY, "Imperva Cloud WAF & DDoS Protection"),
+    ("visid_incap_", "Imperva Incapsula (WAF/CDN)", TechCategory.SECURITY, "Imperva Cloud WAF & DDoS Protection"),
+    ("ak_bmsc", "Akamai Bot Manager", TechCategory.SECURITY, "Akamai Edge Bot Manager"),
+    ("bm_sz", "Akamai Bot Manager", TechCategory.SECURITY, "Akamai Edge Bot Manager"),
+    ("x-sl-compstate", "Radware AppWall (WAF)", TechCategory.SECURITY, "Radware Web Application Firewall"),
     ("awsalb", "AWS Application Load Balancer (ALB)", TechCategory.INFRASTRUCTURE, "AWS Elastic Load Balancing cookie"),
     ("awsalbapp", "AWS Application Load Balancer (ALB)", TechCategory.INFRASTRUCTURE, "AWS Application Load Balancer sticky cookie"),
+    ("serverid", "HAProxy", TechCategory.WEB_SERVERS, "HAProxy load balancer persistence cookie"),
+    ("cf_clearance", "Cloudflare", TechCategory.SECURITY, "Cloudflare bot management clearance"),
+    ("__cf_bm", "Cloudflare", TechCategory.SECURITY, "Cloudflare Bot Management cookie"),
     ("lumclientid", "Lumis Experience Platform (LumisXP)", TechCategory.FRAMEWORKS, "LumisXP Enterprise Portal / DXP"),
     ("lumusersessionid", "Lumis Experience Platform (LumisXP)", TechCategory.FRAMEWORKS, "LumisXP Enterprise Portal session"),
 ]
@@ -97,6 +125,19 @@ SCRIPT_HEADER_VERSION_PATTERNS = {
         r"/\*!\s*jQuery\s+UI[ -]v?([0-9\.]+)",
         r"jQuery\s+UI\s+v?([0-9\.]+)",
     ],
+    "jQuery EasyUI": [
+        r"jQuery\s+EasyUI\s+v?([0-9\.]+)",
+        r"EasyUI\s+v?([0-9\.]+)",
+    ],
+    "jQuery Masked Input Plugin": [
+        r"Masked\s+Input\s+plugin[ a-zA-Z]*Version:\s*([0-9\.]+)",
+        r"maskedinput-([0-9\.]+)",
+        r"Version:\s*([0-9\.]+)",
+    ],
+    "jQuery Print Element Plugin": [
+        r"Print\s+Element\s+Plugin\s+v?([0-9\.]+)",
+        r"PrintArea\s+v?([0-9\.]+)",
+    ],
     "Bootstrap": [
         r"/\*!\s*Bootstrap\s+v([0-9\.]+)",
         r"Bootstrap\s+v?([0-9\.]+)",
@@ -108,9 +149,17 @@ SCRIPT_HEADER_VERSION_PATTERNS = {
         r"PrimeFaces\.settings\.version\s*=\s*['\"]([0-9\.]+)['\"]",
     ],
     "RichFaces": [
-        r"/\*!\s*RichFaces[ a-zA-Z]*v?([0-9\.]+)",
-        r"RichFaces\s+v?([0-9\.]+)",
-        r"RichFaces\.version\s*=\s*['\"]([0-9\.]+)['\"]",
+        r"/\*!\s*RichFaces[ a-zA-Z]*v?([0-9\.]+([a-zA-Z0-9\.\-_]+)?)",
+        r"RichFaces\s+v?([0-9\.]+([a-zA-Z0-9\.\-_]+)?)",
+        r"RichFaces\.version\s*=\s*['\"]([^'\"]+)['\"]",
+    ],
+    "Ajax4jsf": [
+        r"Ajax4jsf[ a-zA-Z]*v?([0-9\.]+([a-zA-Z0-9\.\-_]+)?)",
+        r"a4j[a-zA-Z0-9\-_]*\s+v?([0-9\.]+)",
+    ],
+    "Prototype.js": [
+        r"Prototype=\{Version:\"([0-9\.]+)\"",
+        r"Prototype\s+JavaScript\s+framework,\s+version\s+([0-9\.]+)",
     ],
     "Modernizr": [
         r"/\*!\s*Modernizr\s+v?([0-9\.]+)",
@@ -149,11 +198,60 @@ BODY_CONTENT_PATTERNS = [
         r'(?:primefaces\.js\?v=([0-9\.]+)|ln=primefaces[a-zA-Z0-9\-_]*&amp;v=([0-9\.]+))'
     ),
     (
-        r'(?:richfaces\.js|RichFaces\.ajax|org\.richfaces|\brf-[a-z0-9\-]+|richfaces-queue\.js)',
+        r'(?:/a4j/[gs]/([0-9\._]+[a-zA-Z0-9]*)/org/richfaces|richfaces\.js|RichFaces\.ajax|org\.richfaces|\brf-[a-z0-9\-]+|richfaces-queue\.js|rich\.css)',
         "RichFaces",
         TechCategory.FRAMEWORKS,
         "RichFaces advanced UI component framework for JSF",
-        r'richfaces[a-zA-Z0-9\-_]*\.js\?v=([0-9\.]+)'
+        r'(?:/a4j/[gs]/([0-9\._]+[a-zA-Z0-9]*)/org/richfaces|richfaces[a-zA-Z0-9\-_]*\.js\?v=([0-9\.]+))'
+    ),
+    (
+        r'/a4j/[gs]/([0-9\._]+[a-zA-Z0-9]*)/org/ajax4jsf',
+        "Ajax4jsf",
+        TechCategory.FRAMEWORKS,
+        "Ajax4jsf Rich Internet Applications framework for JSF",
+        r'/a4j/[gs]/([0-9\._]+[a-zA-Z0-9]*)/org/ajax4jsf'
+    ),
+    (
+        r'(?:prototype\.js|Prototype=\{Version:["\']([0-9\.]+)["\']|\bPrototype\.Version\b)',
+        "Prototype.js",
+        TechCategory.FRAMEWORKS,
+        "Prototype JavaScript framework",
+        r'Prototype=\{Version:["\']([0-9\.]+)["\']'
+    ),
+    (
+        r'(?:jquery\.easyui(?:\.min)?\.js|/easyui/)',
+        "jQuery EasyUI",
+        TechCategory.FRAMEWORKS,
+        "jQuery EasyUI UI components collection for web pages",
+        r'jQuery\s+EasyUI\s+([0-9\.]+)'
+    ),
+    (
+        r'jquery\.maskedinput(?:-([0-9\.]+))?(?:\.min)?\.js',
+        "jQuery Masked Input Plugin",
+        TechCategory.FRAMEWORKS,
+        "Masked input plugin for jQuery",
+        r'jquery\.maskedinput-([0-9\.]+)|Version:\s*([0-9\.]+)'
+    ),
+    (
+        r'jquery\.printElement(?:\.min)?\.js',
+        "jQuery Print Element Plugin",
+        TechCategory.FRAMEWORKS,
+        "Print Element plugin for jQuery",
+        r'Print\s+Element\s+Plugin\s+([0-9\.]+)'
+    ),
+    (
+        r'(?:<script[^>]+id=["\']f5_cspm["\']|f5_cspm\.wait_perf_data|\bf5_p:)',
+        "F5 BIG-IP",
+        TechCategory.INFRASTRUCTURE,
+        "F5 BIG-IP Client-Side Performance Monitoring & Bot Defense",
+        None
+    ),
+    (
+        r'JBoss\s*Web(?:/([0-9\.]+([a-zA-Z0-9\.\-_]+)?))?',
+        "JBoss Web",
+        TechCategory.WEB_SERVERS,
+        "JBoss Web Server and Servlet container",
+        r'JBoss\s*Web/([0-9\.]+([a-zA-Z0-9\.\-_]+)?)'
     ),
     (
         r'(?:javax\.faces\.ViewState|javax\.faces\.resource|jsf\.js|\/javax\.faces\.resource\/|\.faces\b|\.jsf\b)',
@@ -321,6 +419,48 @@ BODY_CONTENT_PATTERNS = [
 ]
 
 
+OS_SERVER_PATTERNS = [
+    (r"\b(Ubuntu)\b", "Ubuntu Linux", TechCategory.INFRASTRUCTURE),
+    (r"\b(Debian)\b", "Debian Linux", TechCategory.INFRASTRUCTURE),
+    (r"\b(CentOS)\b", "CentOS Linux", TechCategory.INFRASTRUCTURE),
+    (r"\b(Red Hat(?: Enterprise Linux)?|RHEL)\b", "Red Hat Enterprise Linux", TechCategory.INFRASTRUCTURE),
+    (r"\b(Fedora)\b", "Fedora Linux", TechCategory.INFRASTRUCTURE),
+    (r"\b(FreeBSD)\b", "FreeBSD", TechCategory.INFRASTRUCTURE),
+    (r"\b(Amazon(?: Linux)?)\b", "Amazon Linux", TechCategory.INFRASTRUCTURE),
+    (r"\b(Unix)\b", "Unix", TechCategory.INFRASTRUCTURE),
+    (r"\b(Win32|Win64|Windows)\b", "Microsoft Windows", TechCategory.INFRASTRUCTURE),
+]
+
+IIS_OS_VERSION_MAP = {
+    "10.0": "Windows Server 2016/2019/2022",
+    "8.5": "Windows Server 2012 R2",
+    "8.0": "Windows Server 2012",
+    "7.5": "Windows Server 2008 R2",
+    "7.0": "Windows Server 2008",
+    "6.0": "Windows Server 2003",
+}
+
+SCRIPT_NAME_KEYWORDS = {
+    "jQuery": ["jquery.js", "jquery.min.js", "/jquery/"],
+    "jQuery UI": ["jquery-ui", "jquery.ui", "/ui/"],
+    "jQuery EasyUI": ["easyui"],
+    "jQuery Masked Input Plugin": ["maskedinput"],
+    "jQuery Print Element Plugin": ["printelement"],
+    "Prototype.js": ["prototype", "framework.pack.js"],
+    "Ajax4jsf": ["ajax4jsf", "a4j"],
+    "RichFaces": ["richfaces"],
+    "PrimeFaces": ["primefaces"],
+    "Bootstrap": ["bootstrap"],
+    "Modernizr": ["modernizr"],
+    "Glider.js": ["glider"],
+    "Moment.js": ["moment"],
+    "Lodash": ["lodash"],
+    "Vue.js": ["vue"],
+    "React": ["react"],
+    "JavaServer Faces (JSF)": ["jsf"],
+}
+
+
 class HeaderDetector(BaseDetector):
     """Detector de tecnologias em servidores web e endpoints HTTP."""
 
@@ -362,23 +502,45 @@ class HeaderDetector(BaseDetector):
                     )
                     detected_server = True
 
-            # Detecta SO no header Server (ex: "Apache/2.4.52 (Ubuntu)")
-            if "ubuntu" in server_val.lower():
+            # Detecta Sistema Operacional a partir do header Server
+            for os_pat, os_name, os_cat in OS_SERVER_PATTERNS:
+                if re.search(os_pat, server_val, re.IGNORECASE):
+                    items.append(
+                        TechItem(
+                            name=os_name,
+                            category=os_cat,
+                            source=f"HTTP Header: Server ({server_val})",
+                            confidence=0.95,
+                            description=f"{os_name} operating system signature in Server header",
+                        )
+                    )
+                    break
+
+            # Se for IIS, infere a versão do Windows Server
+            m_iis = re.search(r"microsoft-iis/([0-9\.]+)", server_val, re.IGNORECASE)
+            if m_iis:
+                iis_v = m_iis.group(1)
+                win_os = IIS_OS_VERSION_MAP.get(iis_v, "Microsoft Windows Server")
                 items.append(
                     TechItem(
-                        name="Ubuntu Linux",
+                        name=win_os,
                         category=TechCategory.INFRASTRUCTURE,
-                        source=f"HTTP Header: Server ({server_val})",
+                        source=f"Inferred via Microsoft IIS {iis_v}",
                         confidence=0.9,
+                        description="Microsoft Windows Server operating system",
                     )
                 )
-            elif "debian" in server_val.lower():
+
+            # Detecta OpenSSL no header Server
+            m_ssl = re.search(r"OpenSSL/([0-9\.]+[a-zA-Z]*)", server_val, re.IGNORECASE)
+            if m_ssl:
                 items.append(
                     TechItem(
-                        name="Debian Linux",
-                        category=TechCategory.INFRASTRUCTURE,
+                        name="OpenSSL",
+                        category=TechCategory.SECURITY,
+                        version=clean_version(m_ssl.group(1)),
                         source=f"HTTP Header: Server ({server_val})",
-                        confidence=0.9,
+                        confidence=0.95,
                     )
                 )
 
@@ -390,6 +552,45 @@ class HeaderDetector(BaseDetector):
                         version=clean_version(server_val.split("/")[1]) if "/" in server_val else None,
                         source=f"HTTP Header: Server ({server_val})",
                         confidence=0.8,
+                    )
+                )
+
+        # 1.5. Analisa Probe de Erro 404 para Servidores Ocultos (ex: JBoss Web, Tomcat)
+        probe_body = response_data.get("probe_404_body", "")
+        if probe_body:
+            m_jboss = re.search(r"JBoss\s*Web/([0-9\.]+([a-zA-Z0-9\.\-_]+)?)", probe_body, re.IGNORECASE)
+            if m_jboss:
+                v_jb = clean_version(m_jboss.group(1))
+                items.append(
+                    TechItem(
+                        name="JBoss Web",
+                        category=TechCategory.WEB_SERVERS,
+                        version=v_jb,
+                        source=f"Error 404 Server Banner ({m_jboss.group(0)})",
+                        confidence=1.0,
+                        description="JBoss Web Server and Servlet Container",
+                    )
+                )
+                items.append(
+                    TechItem(
+                        name="JBoss Application Server",
+                        category=TechCategory.WEB_SERVERS,
+                        version="5.x (EAP 5)",
+                        source="Inferred via JBoss Web 2.1.x stack",
+                        confidence=0.9,
+                        description="Red Hat JBoss Enterprise Application Platform",
+                    )
+                )
+            m_tomcat = re.search(r"Apache\s*Tomcat/([0-9\.]+)", probe_body, re.IGNORECASE)
+            if m_tomcat:
+                items.append(
+                    TechItem(
+                        name="Apache Tomcat",
+                        category=TechCategory.WEB_SERVERS,
+                        version=clean_version(m_tomcat.group(1)),
+                        source=f"Error 404 Server Banner ({m_tomcat.group(0)})",
+                        confidence=1.0,
+                        description="Apache Tomcat Servlet Container",
                     )
                 )
 
@@ -424,18 +625,37 @@ class HeaderDetector(BaseDetector):
                     )
                 )
 
-        # 4. Analisa Cookies (verificação por prefixo/substring e no header set-cookie)
+        # 4. Analisa Cookies (verificação precisa: exata para session cookies e por prefixo para WAF/LB)
         all_cookie_names = set(cookies.keys())
         set_cookie_raw = headers.get("set-cookie", "").lower()
 
+        PREFIX_COOKIES = {
+            "ts", "ts01", "bigipserver", "f5_cspm", "awsalb", "awsalbapp", "nsc_", 
+            "citrix_ns_id", "fortiwafsid", "bni__barracuda_lb_cookie", "bnis_", 
+            "barra_counter_session", "incap_ses_", "visid_incap_", "ak_bmsc", 
+            "bm_sz", "x-sl-compstate", "__cf_bm", "cf_clearance", "lumclientid", 
+            "lumusersessionid"
+        }
+
         for cookie_pattern, tech_name, cat, desc in COOKIE_SIGNATURES:
             matched = False
+            is_prefix = cookie_pattern.endswith(("_", "-")) or cookie_pattern in PREFIX_COOKIES
+
             for cname in all_cookie_names:
-                if cookie_pattern in cname:
+                if is_prefix:
+                    if cname.startswith(cookie_pattern) or cookie_pattern in cname:
+                        matched = True
+                        break
+                else:
+                    if cname == cookie_pattern:
+                        matched = True
+                        break
+
+            if not matched:
+                if is_prefix and cookie_pattern in set_cookie_raw:
                     matched = True
-                    break
-            if not matched and cookie_pattern in set_cookie_raw:
-                matched = True
+                elif not is_prefix and re.search(rf"\b{re.escape(cookie_pattern)}=", set_cookie_raw):
+                    matched = True
 
             if matched:
                 items.append(
@@ -525,10 +745,10 @@ class HeaderDetector(BaseDetector):
 
                     patterns = SCRIPT_HEADER_VERSION_PATTERNS[item.name]
                     target_script = None
-                    clean_name = item.name.lower().replace(".js", "").replace(" ", "").replace("-", "")
+                    keywords = SCRIPT_NAME_KEYWORDS.get(item.name, [item.name.lower().replace(".js", "").replace(" ", "").replace("-", "")])
                     for s in script_srcs:
-                        s_lower = s.lower().replace("-", "").replace("_", "")
-                        if clean_name in s_lower or (item.name == "JavaServer Faces (JSF)" and "jsf" in s_lower):
+                        s_lower = s.lower()
+                        if any(kw in s_lower for kw in keywords):
                             target_script = s
                             break
 
