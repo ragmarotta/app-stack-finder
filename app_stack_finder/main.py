@@ -80,6 +80,7 @@ def update_rules_cmd(timeout: float) -> None:
 @click.option("--branch", "-b", help="Branch específica para repositório Git.")
 @click.option("--timeout", default=15.0, type=float, help="Timeout para requisições HTTP (segundos).")
 @click.option("--insecure", "-k", is_flag=True, help="Ignora validação de certificados SSL em URLs.")
+@click.option("--no-proxy", is_flag=True, help="Ignora proxies do ambiente (HTTP_PROXY/HTTPS_PROXY) e conecta diretamente.")
 @click.option("--update-rules", is_flag=True, help="Atualiza assinaturas remotas antes de executar a análise.")
 def scan_auto(
     target: str,
@@ -90,6 +91,7 @@ def scan_auto(
     branch: Optional[str],
     timeout: float,
     insecure: bool,
+    no_proxy: bool,
     update_rules: bool,
 ) -> None:
     """Analisa automaticamente uma URL, diretório local ou repositório Git remoto."""
@@ -102,7 +104,7 @@ def scan_auto(
     # 1. Checa se é URL
     if target.startswith(("http://", "https://")) and not target.endswith(".git"):
         with console.status(f"[bold cyan]Analisando endpoint HTTP/S {target}...[/bold cyan]"):
-            result = asyncio.run(scanner.scan_url(target, timeout=timeout, verify_ssl=not insecure))
+            result = asyncio.run(scanner.scan_url(target, timeout=timeout, verify_ssl=not insecure, no_proxy=no_proxy))
         handle_output(result, format_type, output_path)
         return
 
@@ -172,8 +174,9 @@ def scan_dir_cmd(directory: str, format_type: str, output_path: Optional[str], m
 @click.option("--output", "-o", "output_path", type=click.Path(dir_okay=False, writable=True), help="Salva relatório em arquivo.")
 @click.option("--timeout", default=15.0, type=float, help="Timeout da requisição HTTP.")
 @click.option("--insecure", "-k", is_flag=True, help="Ignora certificados SSL inválidos.")
+@click.option("--no-proxy", is_flag=True, help="Ignora proxies do ambiente (HTTP_PROXY/HTTPS_PROXY) e conecta diretamente.")
 @click.option("--update-rules", is_flag=True, help="Atualiza assinaturas remotas antes da análise.")
-def scan_url_cmd(target_url: str, format_type: str, output_path: Optional[str], timeout: float, insecure: bool, update_rules: bool) -> None:
+def scan_url_cmd(target_url: str, format_type: str, output_path: Optional[str], timeout: float, insecure: bool, no_proxy: bool, update_rules: bool) -> None:
     """Analisa cabeçalhos, cookies, WAF, CDN e DOM de uma URL remota."""
     if update_rules:
         updater = UpdaterService(console=console)
@@ -182,7 +185,7 @@ def scan_url_cmd(target_url: str, format_type: str, output_path: Optional[str], 
     scanner = ScannerService()
     with console.status(f"[bold cyan]Conectando e inspecionando {target_url}...[/bold cyan]"):
         try:
-            result = asyncio.run(scanner.scan_url(target_url, timeout=timeout, verify_ssl=not insecure))
+            result = asyncio.run(scanner.scan_url(target_url, timeout=timeout, verify_ssl=not insecure, no_proxy=no_proxy))
         except Exception as e:
             console.print(f"[bold red]Erro na requisição HTTP:[/bold red] {e}", err=True)
             sys.exit(1)

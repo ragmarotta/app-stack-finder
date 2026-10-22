@@ -106,6 +106,7 @@ class ScannerService:
         timeout: float = 15.0,
         verify_ssl: bool = True,
         follow_redirects: bool = True,
+        no_proxy: bool = False,
     ) -> ScanResult:
         """Envia requisições HTTP e analisa cabeçalhos, cookies, corpo e WAF/CDN."""
         start_time = time.perf_counter()
@@ -128,37 +129,77 @@ class ScannerService:
         }
 
         all_items: List[TechItem] = []
+        client: Optional[httpx.AsyncClient] = None
+        should_close_client = True
+
         try:
-            async with httpx.AsyncClient(
+            # 1. Tenta conectar respeitando ambiente ou diretamente se no_proxy=True
+            use_trust_env = not no_proxy
+            client = httpx.AsyncClient(
                 verify=verify_ssl,
                 timeout=timeout,
                 follow_redirects=follow_redirects,
-            ) as client:
-                resp = await client.get(target_url, headers=req_headers)
-                response_data["status_code"] = resp.status_code
-                response_data["headers"] = dict(resp.headers)
-                response_data["cookies"] = dict(resp.cookies)
-                response_data["body"] = resp.text
+                trust_env=use_trust_env,
+            )
 
-                # Probe rápido para descobrir banners de servidores ocultos em páginas de erro (ex: JBoss, Tomcat)
+            try:
+                resp = await client.get(target_url, headers=req_headers)
+            except (httpx.ProxyError, httpx.ConnectError) as proxy_err:
+                # Se falhar pelo proxy corporativo (comum em intranets/domínios internos não roteados pelo proxy), faz fallback direto
+                if use_trust_env:
+                    await client.aclose()
+                    client = httpx.AsyncClient(
+                        verify=verify_ssl,
+                        timeout=timeout,
+                        follow_redirects=follow_redirects,
+                        trust_env=False,
+                    )
+                    resp = await client.get(target_url, headers=req_headers)
+                else:
+                    raise proxy_err
+
+            response_data["status_code"] = resp.status_code
+            response_data["headers"] = dict(resp.headers)
+            response_data["cookies"] = dict(resp.cookies)
+            response_data["body"] = resp.text
+
+            # 2. Probe para descobrir banners de servidores ocultos em páginas de erro 404 (root e contexto)
+            probe_urls = [
+                urljoin(target_url, "/__app_stack_finder_probe_404__"),
+            ]
+            # Se a URL tem subcaminho (ex: /guiasweb/...), sonda também o contexto da aplicação
+            app_context = target_url.split("?")[0]
+            if "/" in app_context.replace("://", ""):
+                parts = app_context.split("/")
+                if len(parts) > 3:
+                    ctx_base = "/".join(parts[:4]) + "/"
+                    probe_urls.append(urljoin(ctx_base, "__app_stack_finder_probe_404__"))
+
+            for probe_url in probe_urls:
                 try:
-                    probe_url = urljoin(target_url, "/__app_stack_finder_probe_404__")
                     probe_resp = await client.get(probe_url, headers=req_headers, timeout=3.5)
-                    response_data["probe_404_body"] = probe_resp.text[:4096]
-                    response_data["probe_404_headers"] = dict(probe_resp.headers)
+                    body_404 = probe_resp.text[:4096]
+                    if body_404:
+                        response_data["probe_404_body"] = body_404
+                        response_data["probe_404_headers"] = dict(probe_resp.headers)
+                        # Se encontrou banner de servidor conhecido, não precisa testar os próximos
+                        if any(kw in body_404.lower() for kw in ["jboss", "tomcat", "apache", "nginx"]):
+                            break
                 except Exception:
                     pass
 
-                for detector in self.detectors:
-                    if detector.supports_url:
-                        try:
-                            items = await detector.detect_url(target_url, response_data, client=client)
-                            all_items.extend(items)
-                        except TypeError:
-                            items = await detector.detect_url(target_url, response_data)
-                            all_items.extend(items)
-                        except Exception:
-                            continue
+            # 3. Execução dos detectores
+            for detector in self.detectors:
+                if detector.supports_url:
+                    try:
+                        items = await detector.detect_url(target_url, response_data, client=client)
+                        all_items.extend(items)
+                    except TypeError:
+                        items = await detector.detect_url(target_url, response_data)
+                        all_items.extend(items)
+                    except Exception:
+                        continue
+
         except Exception as e:
             response_data["error"] = str(e)
             # Tenta executar detectores mesmo se a conexão falhar ou já tiver dados parciais
@@ -169,6 +210,12 @@ class ScannerService:
                         all_items.extend(items)
                     except Exception:
                         continue
+        finally:
+            if client and should_close_client:
+                try:
+                    await client.aclose()
+                except Exception:
+                    pass
 
         elapsed = time.perf_counter() - start_time
         result = ScanResult(

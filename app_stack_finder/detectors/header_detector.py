@@ -140,6 +140,14 @@ SCRIPT_HEADER_VERSION_PATTERNS = {
         r"Print\s+Element\s+Plugin\s+v?([0-9\.]+)",
         r"PrintArea\s+v?([0-9\.]+)",
     ],
+    "jQuery Mask Plugin": [
+        r"jQuery\s+Mask\s+Plugin\s+v?([0-9\.]+)",
+        r"jQuery-Mask-Plugin[ a-zA-Z]*v?([0-9\.]+)",
+    ],
+    "Facebox": [
+        r"version:\s*([0-9\.]+)",
+        r"Facebox[ a-zA-Z]*v?([0-9\.]+)",
+    ],
     "Bootstrap": [
         r"/\*!\s*(?:\*\s*)?Bootstrap\s+v([0-9\.]+)",
         r"Bootstrap\s+v?([0-9\.]+)",
@@ -219,25 +227,46 @@ BODY_CONTENT_PATTERNS = [
         r'(?:primefaces\.js\?v=([0-9\.]+)|ln=primefaces[a-zA-Z0-9\-_]*&amp;v=([0-9\.]+))'
     ),
     (
-        r'(?:/a4j/[gs]/([0-9\._]+[a-zA-Z0-9]*)/org/richfaces|richfaces\.js|RichFaces\.ajax|org\.richfaces|\brf-[a-z0-9\-]+|richfaces-queue\.js|rich\.css)',
+        r'(?:/a4j/[gs]/([0-9\._]+[a-zA-Z0-9]*?)(?:/org|\.?org)/richfaces|richfaces\.js|RichFaces\.ajax|org\.richfaces|\brf-[a-z0-9\-]+|richfaces-queue\.js|rich\.css)',
         "RichFaces",
         TechCategory.FRAMEWORKS,
         "RichFaces advanced UI component framework for JSF",
-        r'(?:/a4j/[gs]/([0-9\._]+[a-zA-Z0-9]*)/org/richfaces|richfaces[a-zA-Z0-9\-_]*\.js\?v=([0-9\.]+))'
+        r'(?:/a4j/[gs]/([0-9\._]+[a-zA-Z0-9]*?)(?:/org|\.?org)/richfaces|richfaces[a-zA-Z0-9\-_]*\.js\?v=([0-9\.]+))'
     ),
     (
-        r'/a4j/[gs]/([0-9\._]+[a-zA-Z0-9]*)/org/ajax4jsf',
+        r'(?:/a4j/[gs]/([0-9\._]+[a-zA-Z0-9]*?)(?:/org|\.?org)[\./]ajax4jsf|org\.ajax4jsf|a4j:)',
         "Ajax4jsf",
         TechCategory.FRAMEWORKS,
         "Ajax4jsf Rich Internet Applications framework for JSF",
-        r'/a4j/[gs]/([0-9\._]+[a-zA-Z0-9]*)/org/ajax4jsf'
+        r'(?:/a4j/[gs]/([0-9\._]+[a-zA-Z0-9]*?)(?:/org|\.?org)[\./]ajax4jsf|org\.ajax4jsf\s+v?([0-9\.]+))'
     ),
     (
-        r'(?:prototype\.js|Prototype=\{Version:["\']([0-9\.]+)["\']|\bPrototype\.Version\b)',
+        r'(?:prototype(?:\.min)?\.js|PrototypeScript|Prototype=\{Version:["\']([0-9\.]+)["\']|\bPrototype\.Version\b)',
         "Prototype.js",
         TechCategory.FRAMEWORKS,
         "Prototype JavaScript framework",
         r'Prototype=\{Version:["\']([0-9\.]+)["\']'
+    ),
+    (
+        r'(?:\.seam\b|\.seam\?|org\.jboss\.seam|seam/resource|\bSeam\.Component\b)',
+        "JBoss Seam",
+        TechCategory.FRAMEWORKS,
+        "JBoss Seam Enterprise Java Application Framework",
+        None
+    ),
+    (
+        r'jquery\.mask(?:\.min)?\.js',
+        "jQuery Mask Plugin",
+        TechCategory.FRAMEWORKS,
+        "jQuery Mask Plugin by Igor Escobar",
+        r'jQuery\s+Mask\s+Plugin\s+v?([0-9\.]+)'
+    ),
+    (
+        r'facebox(?:\.min)?\.(?:js|css)',
+        "Facebox",
+        TechCategory.FRAMEWORKS,
+        "Facebox Facebook-style lightbox for jQuery",
+        r'version:\s*([0-9\.]+)'
     ),
     (
         r'(?:jquery\.easyui(?:\.min)?\.js|/easyui/)',
@@ -537,7 +566,9 @@ SCRIPT_NAME_KEYWORDS = {
     "jQuery EasyUI": ["easyui"],
     "jQuery Masked Input Plugin": ["maskedinput"],
     "jQuery Print Element Plugin": ["printelement"],
-    "Prototype.js": ["prototype", "framework.pack.js"],
+    "jQuery Mask Plugin": ["jquery.mask."],
+    "Facebox": ["facebox."],
+    "Prototype.js": ["prototype", "framework.pack.js", "prototypescript"],
     "Ajax4jsf": ["ajax4jsf", "a4j"],
     "RichFaces": ["richfaces"],
     "PrimeFaces": ["primefaces"],
