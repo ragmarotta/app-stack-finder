@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "app-stack-finder"
+version = "1.0.0"
+description = "Deep technology stack fingerprinting and inspection tool for repositories, local directories, and web servers."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "AntiGravity Team"}
+]
+keywords = [
+    "stack-finder", "fingerprinting", "technology-detector", "devops", "ci-cd", "security", "sca"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Security",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "click>=8.1.0",
+    "rich>=13.7.0",
+    "httpx>=0.27.0",
+    "pyyaml>=6.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[project.scripts]
+app-stack-finder = "app_stack_finder.main:cli"
+stack-finder = "app_stack_finder.main:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app_stack_finder*"]
