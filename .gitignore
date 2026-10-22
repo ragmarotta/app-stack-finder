@@ -40,3 +40,7 @@ htmlcov/
 
 # Output test files
 *.log
+
+# Remote signatures cache
+app_stack_finder/data/technologies.json
+app_stack_finder/data/*.tmp

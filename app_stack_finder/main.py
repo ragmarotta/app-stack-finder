@@ -14,6 +14,7 @@ from rich.console import Console
 from app_stack_finder import __version__
 from app_stack_finder.core.models import ScanResult
 from app_stack_finder.services.scanner_service import ScannerService
+from app_stack_finder.services.updater_service import UpdaterService
 from app_stack_finder.utils.reporter import Reporter
 
 console = Console()
@@ -46,11 +47,27 @@ def handle_output(result: ScanResult, format_type: str, output_path: Optional[st
 
 @click.group(invoke_without_command=True)
 @click.version_option(__version__, "-v", "--version", message="%(prog)s version %(version)s")
+@click.option("--update-rules", is_flag=True, help="Baixa e atualiza a base mais recente de assinaturas remotas (Webanalyze).")
 @click.pass_context
-def cli(ctx: click.Context) -> None:
+def cli(ctx: click.Context, update_rules: bool) -> None:
     """App Stack Finder: Análise profunda e fingerprinting de tecnologias, frameworks e infraestrutura."""
+    if update_rules:
+        updater = UpdaterService(console=console)
+        updater.update_rules()
+        if ctx.invoked_subcommand is None:
+            return
+
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
+
+
+# --- Comando Explícito: UPDATE-RULES ---
+@cli.command("update-rules")
+@click.option("--timeout", default=30.0, type=float, help="Timeout para download das regras remotas (segundos).")
+def update_rules_cmd(timeout: float) -> None:
+    """Baixa e atualiza o arquivo de regras remotas (Webanalyze technologies.json)."""
+    updater = UpdaterService(console=console)
+    updater.update_rules(timeout=timeout)
 
 
 # --- Comando Inteligente Genérico: SCAN ---
@@ -63,6 +80,7 @@ def cli(ctx: click.Context) -> None:
 @click.option("--branch", "-b", help="Branch específica para repositório Git.")
 @click.option("--timeout", default=15.0, type=float, help="Timeout para requisições HTTP (segundos).")
 @click.option("--insecure", "-k", is_flag=True, help="Ignora validação de certificados SSL em URLs.")
+@click.option("--update-rules", is_flag=True, help="Atualiza assinaturas remotas antes de executar a análise.")
 def scan_auto(
     target: str,
     format_type: str,
@@ -72,8 +90,13 @@ def scan_auto(
     branch: Optional[str],
     timeout: float,
     insecure: bool,
+    update_rules: bool,
 ) -> None:
     """Analisa automaticamente uma URL, diretório local ou repositório Git remoto."""
+    if update_rules:
+        updater = UpdaterService(console=console)
+        updater.update_rules()
+
     scanner = ScannerService()
 
     # 1. Checa se é URL
@@ -149,8 +172,13 @@ def scan_dir_cmd(directory: str, format_type: str, output_path: Optional[str], m
 @click.option("--output", "-o", "output_path", type=click.Path(dir_okay=False, writable=True), help="Salva relatório em arquivo.")
 @click.option("--timeout", default=15.0, type=float, help="Timeout da requisição HTTP.")
 @click.option("--insecure", "-k", is_flag=True, help="Ignora certificados SSL inválidos.")
-def scan_url_cmd(target_url: str, format_type: str, output_path: Optional[str], timeout: float, insecure: bool) -> None:
+@click.option("--update-rules", is_flag=True, help="Atualiza assinaturas remotas antes da análise.")
+def scan_url_cmd(target_url: str, format_type: str, output_path: Optional[str], timeout: float, insecure: bool, update_rules: bool) -> None:
     """Analisa cabeçalhos, cookies, WAF, CDN e DOM de uma URL remota."""
+    if update_rules:
+        updater = UpdaterService(console=console)
+        updater.update_rules()
+
     scanner = ScannerService()
     with console.status(f"[bold cyan]Conectando e inspecionando {target_url}...[/bold cyan]"):
         try:

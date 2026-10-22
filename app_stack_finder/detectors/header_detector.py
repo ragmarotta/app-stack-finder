@@ -9,6 +9,7 @@ from urllib.parse import urljoin
 from app_stack_finder.core.interfaces import BaseDetector
 from app_stack_finder.core.models import ScanResult, ScanTarget, TechCategory, TechItem
 from app_stack_finder.detectors.base import clean_version
+from app_stack_finder.services.rule_repository import RuleRepository
 
 SERVER_PATTERNS = [
     (r"nginx(?:/([0-9\.]+))?", "Nginx", TechCategory.WEB_SERVERS, "HTTP and reverse proxy server"),
@@ -892,6 +893,15 @@ class HeaderDetector(BaseDetector):
                                     break
                         except Exception:
                             pass
+
+        # 7. Regras Híbridas (Webanalyze Remoto quando disponível no RuleRepository)
+        try:
+            rule_repo = RuleRepository.get_instance()
+            if rule_repo.has_remote_rules:
+                remote_items = rule_repo.match_web_response(url, response_data)
+                items.extend(remote_items)
+        except Exception:
+            pass
 
         res = ScanResult(target=ScanTarget("url", url), items=items)
         res.deduplicate_and_merge()

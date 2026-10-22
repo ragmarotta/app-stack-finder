@@ -53,6 +53,8 @@ O projeto adota os princípios de **Clean Architecture**, **SOLID** e extensibil
 
 ```text
 app_stack_finder/
+├── data/                     # Armazenamento local de assinaturas
+│   └── technologies.json     # Base de 7.500+ assinaturas (baixada sob demanda)
 ├── core/
 │   ├── models.py             # Modelos de domínio (TechItem, ScanResult, TechCategory)
 │   └── interfaces.py         # Contratos e interfaces abstratas (BaseDetector)
@@ -63,7 +65,9 @@ app_stack_finder/
 │   └── header_detector.py    # Fingerprinting HTTP, headers, cookies, WAF/CDN
 ├── services/
 │   ├── git_service.py        # Gestão de clone e limpeza de repositórios remotos
-│   └── scanner_service.py    # Orquestrador central de varreduras
+│   ├── scanner_service.py    # Orquestrador central de varreduras
+│   ├── rule_repository.py    # Repositório unificado de regras (Singleton & Lazy Loading)
+│   └── updater_service.py    # Atualizador e download de assinaturas remotas
 ├── utils/
 │   ├── file_walker.py        # Varredura eficiente por geradores/streams
 │   └── reporter.py           # Formatadores de saída (Rich, JSON, Markdown)
@@ -146,6 +150,31 @@ app-stack-finder git https://github.com/sua-org/repo-privado.git -t ghp_seuToken
 # Repositório privado via SSH
 app-stack-finder git git@github.com:sua-org/repo-privado.git --ssh-key ~/.ssh/id_ed25519 -b main
 ```
+
+### 5. Atualização de Assinaturas Remotas (`--update-rules`)
+
+O `app-stack-finder` utiliza uma estratégia avançada de **Regras Híbridas (Hybrid Matching)**:
+- **Regras Internas Predefinidas:** Nativas do projeto, focadas na detecção profunda de manifestos de código (Node.js, Python, Java, Go, Rust, PHP, Ruby, .NET), infraestrutura (Docker, Kubernetes, Helm, Terraform, Ansible, CI/CD) e frameworks/WAFs corporativos e governamentais (LumisXP, InfraPHP, eproc, JBoss Web, F5 BIG-IP/ASM).
+- **Assinaturas Remotas Webanalyze:** Base com mais de **7.500 tecnologias** web (CMS, bibliotecas JavaScript, analítica, servidores web, CDNs, etc.) sincronizada do ecossistema Wappalyzer/Webanalyze.
+
+Para baixar ou atualizar a base de assinaturas remotas:
+
+```bash
+# Atualizar a base de assinaturas diretamente
+app-stack-finder --update-rules
+
+# Ou através do comando explícito
+app-stack-finder update-rules
+
+# Ou atualizar automaticamente antes de executar uma análise
+app-stack-finder scan https://example.com --update-rules
+```
+
+#### Características do Hybrid Matching & Lazy Loading:
+1. **Lazy Loading & Baixo Consumo de Memória:** O carregamento do arquivo `technologies.json` só ocorre quando uma análise de URL/HTTP é efetivamente iniciada. Varreduras de arquivos locais ou repositórios Git não gastam CPU nem memória com o parse das 7.500 regras web.
+2. **Pré-Compilação de Regex:** Todas as regras são pré-compiladas no momento do carregamento em estruturas indexadas por tipo de cabeçalho, cookie ou meta tag (`re.compile`), garantindo detecção em frações de segundo.
+3. **Resolução de Versões Dinâmicas:** Trata o formato de versões do Wappalyzer (isolando modificadores como `\;version:\1` e ternários `\;version:\1?A:B`).
+4. **Fallback Transparente:** Caso o arquivo `technologies.json` ainda não tenha sido baixado, a aplicação opera normalmente com as regras internas predefinidas sem quebrar.
 
 ---
 
