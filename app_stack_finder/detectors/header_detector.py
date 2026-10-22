@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+from urllib.parse import urljoin
 
 from app_stack_finder.core.interfaces import BaseDetector
 from app_stack_finder.core.models import ScanResult, ScanTarget, TechCategory, TechItem
@@ -67,6 +68,10 @@ COOKIE_SIGNATURES = [
     ("asp.net_sessionid", "ASP.NET", TechCategory.FRAMEWORKS, "ASP.NET session cookie"),
     (".aspnetcore.antiforgery", "ASP.NET Core", TechCategory.FRAMEWORKS, "ASP.NET Core antiforgery"),
     ("cf_clearance", "Cloudflare", TechCategory.SECURITY, "Cloudflare bot management clearance"),
+    ("awsalb", "AWS Application Load Balancer (ALB)", TechCategory.INFRASTRUCTURE, "AWS Elastic Load Balancing cookie"),
+    ("awsalbapp", "AWS Application Load Balancer (ALB)", TechCategory.INFRASTRUCTURE, "AWS Application Load Balancer sticky cookie"),
+    ("lumclientid", "Lumis Experience Platform (LumisXP)", TechCategory.FRAMEWORKS, "LumisXP Enterprise Portal / DXP"),
+    ("lumusersessionid", "Lumis Experience Platform (LumisXP)", TechCategory.FRAMEWORKS, "LumisXP Enterprise Portal session"),
 ]
 
 BODY_META_PATTERNS = [
@@ -77,7 +82,61 @@ BODY_META_PATTERNS = [
     (r'<meta[^>]+name=["\']generator["\'][^>]+content=["\']Drupal\s*([0-9\.]*)["\']', "Drupal", TechCategory.FRAMEWORKS),
     (r'<meta[^>]+name=["\']generator["\'][^>]+content=["\']Ghost\s*([0-9\.]*)["\']', "Ghost", TechCategory.FRAMEWORKS),
     (r'<meta[^>]+name=["\']generator["\'][^>]+content=["\']Joomla!?\s*([0-9\.]*)["\']', "Joomla", TechCategory.FRAMEWORKS),
+    (r'<meta[^>]+name=["\']generator["\'][^>]+content=["\']LumisXP\s*([0-9\.]*)["\']', "Lumis Experience Platform (LumisXP)", TechCategory.FRAMEWORKS),
+    (r'<meta[^>]+name=["\']generator["\'][^>]+content=["\']Mojarra\s*([0-9\.]*)["\']', "Mojarra (JSF)", TechCategory.FRAMEWORKS),
 ]
+
+# Padrões para comentários de cabeçalho em arquivos JS estáticos
+SCRIPT_HEADER_VERSION_PATTERNS = {
+    "jQuery": [
+        r"/\*!\s*jQuery\s+v([0-9\.]+)",
+        r"/\*!\s*jQuery\s+JavaScript\s+Library\s+v([0-9\.]+)",
+        r"jQuery\s+v?([0-9\.]+)\b",
+    ],
+    "jQuery UI": [
+        r"/\*!\s*jQuery\s+UI[ -]v?([0-9\.]+)",
+        r"jQuery\s+UI\s+v?([0-9\.]+)",
+    ],
+    "Bootstrap": [
+        r"/\*!\s*Bootstrap\s+v([0-9\.]+)",
+        r"Bootstrap\s+v?([0-9\.]+)",
+    ],
+    "PrimeFaces": [
+        r"/\*!\s*PrimeFaces[ a-zA-Z]*v?([0-9\.]+)",
+        r"PrimeFaces\s+v?([0-9\.]+)",
+        r"PrimeFaces\.version\s*=\s*['\"]([0-9\.]+)['\"]",
+        r"PrimeFaces\.settings\.version\s*=\s*['\"]([0-9\.]+)['\"]",
+    ],
+    "RichFaces": [
+        r"/\*!\s*RichFaces[ a-zA-Z]*v?([0-9\.]+)",
+        r"RichFaces\s+v?([0-9\.]+)",
+        r"RichFaces\.version\s*=\s*['\"]([0-9\.]+)['\"]",
+    ],
+    "Modernizr": [
+        r"/\*!\s*Modernizr\s+v?([0-9\.]+)",
+        r"Modernizr\s+v?([0-9\.]+)",
+    ],
+    "Glider.js": [
+        r"/\*!\s*Glider\.js\s+v?([0-9\.]+)",
+        r"glider(?:-js)?@([0-9\.]+)",
+    ],
+    "Moment.js": [
+        r"/\*!\s*version\s*:\s*([0-9\.]+).*momentjs\.com",
+        r"moment\.js\s+v?([0-9\.]+)",
+    ],
+    "Lodash": [
+        r"/\*!\s*lodash\s+v?([0-9\.]+)",
+        r"lodash\s+([0-9\.]+)",
+    ],
+    "Vue.js": [
+        r"/\*!\s*Vue\.js\s+v([0-9\.]+)",
+        r"Vue\s+v([0-9\.]+)",
+    ],
+    "React": [
+        r"/\*!\s*React\s+v([0-9\.]+)",
+        r"React\s+v([0-9\.]+)",
+    ],
+}
 
 # Detecção detalhada de Frameworks JS, Java (JSF/PrimeFaces/RichFaces), etc.
 BODY_CONTENT_PATTERNS = [
@@ -101,6 +160,48 @@ BODY_CONTENT_PATTERNS = [
         "JavaServer Faces (JSF)",
         TechCategory.FRAMEWORKS,
         "JavaServer Faces specification for building UI components",
+        r'(?:ln=javax\.faces(?:&amp;|&)v=([0-9\.]+)|Mojarra(?:/Facelets)?\s+v?([0-9\.]+)|MyFaces(?:-api)?\s+v?([0-9\.]+)|jsf\.js\?v=([0-9\.]+))'
+    ),
+    (
+        r'(?:<meta[^>]+name=["\']generator["\'][^>]+content=["\']LumisXP|LumisPortal\.js|LumisDoui\.js|LumisPortalForm|\blumis/portal\b|\blumis-theme\b)',
+        "Lumis Experience Platform (LumisXP)",
+        TechCategory.FRAMEWORKS,
+        "LumisXP Enterprise Digital Experience Platform and Portal",
+        r'Lumis(?:XP)?\s+v?([0-9\.]+)'
+    ),
+    (
+        r'modernizr(?:-([0-9\.]+))?(?:\.min)?\.js',
+        "Modernizr",
+        TechCategory.FRAMEWORKS,
+        "Modernizr JavaScript library for feature detection",
+        r'modernizr[/-]([0-9\.]+)'
+    ),
+    (
+        r'glider(?:-js)?(?:@([0-9\.]+))?(?:\.min)?\.(?:js|css)',
+        "Glider.js",
+        TechCategory.FRAMEWORKS,
+        "Fast, lightweight, dependency-free carousel alternative",
+        r'glider(?:-js)?@([0-9\.]+)'
+    ),
+    (
+        r'(?:fancybox(?:\.min)?\.(?:js|css)|#fancybox-wrap|\.fancybox\b)',
+        "FancyBox",
+        TechCategory.FRAMEWORKS,
+        "Tool that offers a nice and elegant way to add zooming functionality",
+        r'fancybox[/-]([0-9\.]+)'
+    ),
+    (
+        r'vlibras(?:-plugin)?\.js',
+        "VLibras (Acessibilidade Digital)",
+        TechCategory.OTHER,
+        "Suite de ferramentas para acessibilidade em Língua Brasileira de Sinais",
+        None
+    ),
+    (
+        r'fonts\.googleapis\.com/(?:icon\?family=Material\+Icons|css)',
+        "Google Fonts / Material Icons",
+        TechCategory.OTHER,
+        "Google Web Fonts and Material Design Icons",
         None
     ),
     (
@@ -235,7 +336,7 @@ class HeaderDetector(BaseDetector):
     def supports_url(self) -> bool:
         return True
 
-    async def detect_url(self, url: str, response_data: Dict[str, Any]) -> List[TechItem]:
+    async def detect_url(self, url: str, response_data: Dict[str, Any], client: Any = None) -> List[TechItem]:
         items: List[TechItem] = []
         headers: Dict[str, str] = {k.lower(): str(v) for k, v in response_data.get("headers", {}).items()}
         cookies: Dict[str, str] = {k.lower(): str(v) for k, v in response_data.get("cookies", {}).items()}
@@ -323,15 +424,26 @@ class HeaderDetector(BaseDetector):
                     )
                 )
 
-        # 4. Analisa Cookies
-        for cookie_name, tech_name, cat, desc in COOKIE_SIGNATURES:
-            if cookie_name in cookies:
+        # 4. Analisa Cookies (verificação por prefixo/substring e no header set-cookie)
+        all_cookie_names = set(cookies.keys())
+        set_cookie_raw = headers.get("set-cookie", "").lower()
+
+        for cookie_pattern, tech_name, cat, desc in COOKIE_SIGNATURES:
+            matched = False
+            for cname in all_cookie_names:
+                if cookie_pattern in cname:
+                    matched = True
+                    break
+            if not matched and cookie_pattern in set_cookie_raw:
+                matched = True
+
+            if matched:
                 items.append(
                     TechItem(
                         name=tech_name,
                         category=cat,
-                        source=f"HTTP Cookie: {cookie_name}",
-                        confidence=0.9,
+                        source=f"HTTP Cookie: {cookie_pattern}",
+                        confidence=0.95,
                         description=desc,
                     )
                 )
@@ -403,6 +515,40 @@ class HeaderDetector(BaseDetector):
                             description="Java enterprise platform",
                         )
                     )
+
+            # 6. Inspeção Profunda de Assets (Scripts) para extração de versão a partir dos comentários
+            if client:
+                script_srcs = re.findall(r'<script[^>]+src=["\']([^"\']+)["\']', body, re.IGNORECASE)
+                for item in items:
+                    if item.version or item.name not in SCRIPT_HEADER_VERSION_PATTERNS:
+                        continue
+
+                    patterns = SCRIPT_HEADER_VERSION_PATTERNS[item.name]
+                    target_script = None
+                    clean_name = item.name.lower().replace(".js", "").replace(" ", "").replace("-", "")
+                    for s in script_srcs:
+                        s_lower = s.lower().replace("-", "").replace("_", "")
+                        if clean_name in s_lower or (item.name == "JavaServer Faces (JSF)" and "jsf" in s_lower):
+                            target_script = s
+                            break
+
+                    if target_script:
+                        try:
+                            resolved_src = urljoin(url, target_script)
+                            script_resp = await client.get(
+                                resolved_src,
+                                headers={"Range": "bytes=0-1024"},
+                                timeout=4.0,
+                            )
+                            chunk = script_resp.text[:1024]
+                            for pat in patterns:
+                                vm = re.search(pat, chunk, re.IGNORECASE)
+                                if vm:
+                                    item.version = clean_version(vm.group(1))
+                                    item.source = f"{item.source} + Asset ({target_script})"
+                                    break
+                        except Exception:
+                            pass
 
         res = ScanResult(target=ScanTarget("url", url), items=items)
         res.deduplicate_and_merge()

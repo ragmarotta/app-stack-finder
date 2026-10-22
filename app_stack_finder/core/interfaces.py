@@ -37,6 +37,6 @@ class BaseDetector(ABC):
         """Executa a análise em arquivos do sistema local."""
         return []
 
-    async def detect_url(self, url: str, response_data: Dict[str, Any]) -> List[TechItem]:
-        """Executa a análise em respostas HTTP/S."""
+    async def detect_url(self, url: str, response_data: Dict[str, Any], client: Any = None) -> List[TechItem]:
+        """Executa a análise em respostas HTTP/S, podendo opcionalmente inspecionar assets estáticos."""
         return []

@@ -127,6 +127,7 @@ class ScannerService:
             "status_code": 0,
         }
 
+        all_items: List[TechItem] = []
         try:
             async with httpx.AsyncClient(
                 verify=verify_ssl,
@@ -138,17 +139,27 @@ class ScannerService:
                 response_data["headers"] = dict(resp.headers)
                 response_data["cookies"] = dict(resp.cookies)
                 response_data["body"] = resp.text
+
+                for detector in self.detectors:
+                    if detector.supports_url:
+                        try:
+                            items = await detector.detect_url(target_url, response_data, client=client)
+                            all_items.extend(items)
+                        except TypeError:
+                            items = await detector.detect_url(target_url, response_data)
+                            all_items.extend(items)
+                        except Exception:
+                            continue
         except Exception as e:
             response_data["error"] = str(e)
-
-        all_items: List[TechItem] = []
-        for detector in self.detectors:
-            if detector.supports_url:
-                try:
-                    items = await detector.detect_url(target_url, response_data)
-                    all_items.extend(items)
-                except Exception:
-                    continue
+            # Tenta executar detectores mesmo se a conexão falhar ou já tiver dados parciais
+            for detector in self.detectors:
+                if detector.supports_url:
+                    try:
+                        items = await detector.detect_url(target_url, response_data)
+                        all_items.extend(items)
+                    except Exception:
+                        continue
 
         elapsed = time.perf_counter() - start_time
         result = ScanResult(
