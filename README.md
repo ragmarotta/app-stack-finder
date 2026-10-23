@@ -92,6 +92,33 @@ source .venv/bin/activate
 pip install -e .
 ```
 
+### 📦 Empacotamento em Executável Standalone (Linux & Windows)
+
+O sistema pode ser compilado em um **executável único e independente** (standalone single-file), funcionando em qualquer máquina **sem exigir a instalação do Python**:
+
+#### No Linux (Binário ELF Standalone):
+```bash
+# Executa a compilação e testa o executável com --help automaticamente
+./build.sh linux
+
+# O binário gerado estará disponível em dist/app-stack-finder
+./dist/app-stack-finder --help
+./dist/app-stack-finder scan https://exemplo.com
+```
+
+#### No Windows (Executável .exe):
+```cmd
+REM No Windows (CMD ou PowerShell), execute o script batch
+build.bat
+
+REM O executável será gerado e validado em dist\app-stack-finder.exe
+dist\app-stack-finder.exe --help
+dist\app-stack-finder.exe scan C:\caminho\do\projeto
+```
+
+#### CI/CD Automático Multiplataforma:
+O repositório já inclui o workflow `.github/workflows/build-binaries.yml`, que compila automaticamente os artefatos de **Linux** (`app-stack-finder-linux`) e **Windows** (`app-stack-finder-windows.exe`) no GitHub Actions.
+
 ---
 
 ## 💻 Guia de Uso da CLI
