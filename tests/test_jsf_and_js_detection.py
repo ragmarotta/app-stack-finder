@@ -40,7 +40,7 @@ async def test_primefaces_and_jquery_detection():
         "body": html_body,
     }
 
-    items = await detector.detect_url("https://meu-portal-legado.gov.br", mock_data)
+    items = await detector.detect_url("https://www.google.com", mock_data)
     names = {item.name: item for item in items}
 
     # PrimeFaces com versão 12.0.0
@@ -97,7 +97,7 @@ async def test_richfaces_detection():
         "body": html_body,
     }
 
-    items = await detector.detect_url("https://portal-richfaces.corp.local", mock_data)
+    items = await detector.detect_url("https://github.com", mock_data)
     names = {item.name: item for item in items}
 
     assert "RichFaces" in names
@@ -133,7 +133,7 @@ async def test_client_side_js_libraries():
         "body": html_body,
     }
 
-    items = await detector.detect_url("https://modern-app.com", mock_data)
+    items = await detector.detect_url("https://web.whatsapp.com", mock_data)
     names = {item.name: item for item in items}
 
     assert "jQuery" in names

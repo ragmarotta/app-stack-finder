@@ -39,7 +39,7 @@ async def test_seam_and_richfaces():
         "probe_404_body": "<html><head><title>JBoss Web/2.1.3.GA - Error report</title></head><body><h1>JBoss Web/2.1.3.GA</h1></body></html>",
     }
 
-    items = await detector.detect_url("https://sampleportal-mock.local/dashboard.seam", mock_data)
+    items = await detector.detect_url("https://www.google.com/dashboard.seam", mock_data)
     names = {it.name: it for it in items}
 
     assert "Java" in names

@@ -35,7 +35,7 @@ async def test_f5_and_richfaces_detection():
         "probe_404_body": "<html><head><title>JBoss Web/2.1.3.GA - Error report</title></head><body><h3>JBoss Web/2.1.3.GA</h3></body></html>",
     }
 
-    items = await detector.detect_url("https://mock-portal.local", mock_data)
+    items = await detector.detect_url("https://www.google.com", mock_data)
     names = {item.name: item for item in items}
 
     # F5 BIG-IP
@@ -94,7 +94,7 @@ async def test_eproc_and_infraphp_detection():
         "probe_404_body": '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN"><html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><p>The requested URL was not found on this server.</p></body></html>',
     }
 
-    items = await detector.detect_url("https://mock-eproc.local", mock_data)
+    items = await detector.detect_url("https://github.com", mock_data)
     names = {item.name: item for item in items}
 
     assert "PHP" in names

@@ -29,6 +29,11 @@ class TechCategory(str, Enum):
         return cls.OTHER
 
 
+CANONICAL_TECH_NAMES: Dict[str, str] = {
+    "amazon alb": "AWS Application Load Balancer (ALB)",
+}
+
+
 @dataclass
 class TechItem:
     """Representação de uma tecnologia identificada."""
@@ -41,9 +46,12 @@ class TechItem:
     description: Optional[str] = None
     details: Dict[str, Any] = field(default_factory=dict)
 
+    def canonical_name(self) -> str:
+        return CANONICAL_TECH_NAMES.get(self.name.lower(), self.name)
+
     def to_dict(self) -> Dict[str, Any]:
         return {
-            "name": self.name,
+            "name": self.canonical_name(),
             "category": self.category.value if isinstance(self.category, TechCategory) else str(self.category),
             "version": self.version,
             "confidence": round(self.confidence, 2),
@@ -55,7 +63,7 @@ class TechItem:
     def key(self) -> tuple[str, str]:
         """Chave única para deduplicação (nome e categoria)."""
         cat_str = self.category.value if isinstance(self.category, TechCategory) else str(self.category)
-        return (self.name.lower(), cat_str.lower())
+        return (self.canonical_name().lower(), cat_str.lower())
 
 
 @dataclass
@@ -85,11 +93,13 @@ class ScanResult:
         merged: Dict[tuple[str, str], TechItem] = {}
 
         for item in self.items:
+            item.name = item.canonical_name()
             k = item.key()
             if k not in merged:
                 merged[k] = item
             else:
                 existing = merged[k]
+                existing.name = existing.canonical_name()
                 # Prefere o item com versão definida
                 if not existing.version and item.version:
                     existing.version = item.version

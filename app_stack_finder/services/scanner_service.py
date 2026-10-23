@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -165,12 +166,36 @@ class ScannerService:
             response_data["cookies"] = dict(resp.cookies)
             response_data["body"] = resp.text
 
+            # 1.5. Suporte a redirecionamento client-side via <meta http-equiv="Refresh" content="0; URL=...">
+            meta_refresh = re.search(r'<meta[^>]+http-equiv=["\']?refresh["\']?[^>]+content=["\']?[0-9]*\s*;\s*url=([^"\'\s>]+)', resp.text, re.IGNORECASE)
+            if not meta_refresh:
+                meta_refresh = re.search(r'<meta[^>]+content=["\']?[0-9]*\s*;\s*url=([^"\'\s>]+)["\']?[^>]+http-equiv=["\']?refresh["\']?', resp.text, re.IGNORECASE)
+
+            if meta_refresh and follow_redirects:
+                refresh_target = meta_refresh.group(1).strip()
+                refresh_url = urljoin(effective_url, refresh_target)
+                try:
+                    ref_resp = await client.get(refresh_url, headers=req_headers)
+                    # Preserva cookies da resposta inicial e adiciona os novos
+                    for ck, cv in ref_resp.cookies.items():
+                        response_data["cookies"][ck] = cv
+                    for hk, hv in ref_resp.headers.items():
+                        if hk.lower() not in response_data["headers"]:
+                            response_data["headers"][hk.lower()] = hv
+                    # Concatena os corpos para preservar assinaturas do redirecionador e do destino
+                    response_data["body"] = resp.text + "\n" + ref_resp.text
+                    effective_url = str(ref_resp.url)
+                    response_data["url"] = effective_url
+                except Exception:
+                    pass
+
             # 2. Probe para descobrir banners de servidores ocultos em páginas de erro 404 (root e contexto)
+            base_probe_url = str(resp.url)
             probe_urls = [
-                urljoin(effective_url, "/__app_stack_finder_probe_404__"),
+                urljoin(base_probe_url, "/__app_stack_finder_probe_404__"),
             ]
             # Se a URL tem subcaminho (ex: /app/...), sonda também o contexto da aplicação
-            app_context = effective_url.split("?")[0]
+            app_context = base_probe_url.split("?")[0]
             if "/" in app_context.replace("://", ""):
                 parts = app_context.split("/")
                 if len(parts) > 3:
@@ -180,13 +205,23 @@ class ScannerService:
             for probe_url in probe_urls:
                 try:
                     probe_resp = await client.get(probe_url, headers=req_headers, timeout=3.5)
-                    body_404 = probe_resp.text[:4096]
+                    body_404 = probe_resp.text[:32768]
                     if body_404:
-                        response_data["probe_404_body"] = body_404
-                        response_data["probe_404_headers"] = dict(probe_resp.headers)
-                        # Se encontrou banner de servidor conhecido, não precisa testar os próximos
-                        if any(kw in body_404.lower() for kw in ["jboss", "tomcat", "apache", "nginx"]):
-                            break
+                        curr_body = response_data.get("probe_404_body", "")
+                        response_data["probe_404_body"] = (curr_body + "\n" + body_404).strip() if curr_body else body_404
+
+                    if "probe_404_headers" not in response_data:
+                        response_data["probe_404_headers"] = {}
+                    for phk, phv in probe_resp.headers.items():
+                        phk_l = phk.lower()
+                        if phk_l not in response_data["probe_404_headers"]:
+                            response_data["probe_404_headers"][phk_l] = phv
+                        elif phv and phv not in response_data["probe_404_headers"][phk_l]:
+                            response_data["probe_404_headers"][phk_l] += f", {phv}"
+
+                    # Se encontrou banner de servidor de aplicação conhecido no corpo, encerra sondagem
+                    if body_404 and any(kw in body_404.lower() for kw in ["jboss web/", "apache tomcat/", "nginx/"]):
+                        break
                 except Exception:
                     pass
 

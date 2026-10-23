@@ -73,7 +73,7 @@ def test_rule_repository_singleton_and_lazy_loading(tmp_path: Path):
     assert repo1.is_loaded is True
 
     # Matching não quebra e retorna vazio
-    items = repo1.match_web_response("https://example.com", {"headers": {"server": "nginx"}})
+    items = repo1.match_web_response("https://www.google.com", {"headers": {"server": "nginx"}})
     assert items == []
 
 
@@ -125,7 +125,7 @@ def test_rule_repository_with_mock_technologies(tmp_path: Path):
         """,
     }
 
-    items = repo.match_web_response("https://mock-site.com", response_data)
+    items = repo.match_web_response("https://github.com", response_data)
     names = {it.name: it for it in items}
 
     assert "Nginx" in names

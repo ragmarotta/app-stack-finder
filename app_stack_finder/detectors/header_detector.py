@@ -26,7 +26,9 @@ SERVER_PATTERNS = [
     (r"apache-coyote(?:/([0-9\.]+))?|tomcat(?:/([0-9\.]+))?", "Apache Tomcat", TechCategory.WEB_SERVERS, "Java Servlet and JSP container"),
     (r"jetty(?:/([0-9\.]+))?", "Jetty", TechCategory.WEB_SERVERS, "Java HTTP server and Servlet container"),
     (r"wildfly(?:/([0-9\.]+))?", "WildFly", TechCategory.WEB_SERVERS, "Flexible, lightweight Java application server"),
-    (r"jboss\s*(?:web)?(?:/([0-9\.]+([a-zA-Z0-9\.\-_]+)?))?", "JBoss Web", TechCategory.WEB_SERVERS, "JBoss Web Server / Application Container"),
+    (r"\bjboss[- ]?eap(?:/([0-9\.]+([a-zA-Z0-9\.\-_]+)?))?", "JBoss EAP", TechCategory.WEB_SERVERS, "Red Hat JBoss Enterprise Application Platform"),
+    (r"\bjboss\s+web(?:/([0-9\.]+([a-zA-Z0-9\.\-_]+)?))?", "JBoss Web", TechCategory.WEB_SERVERS, "JBoss Web Server / Servlet Container"),
+    (r"\bjboss(?![- ]?eap|\s+web)(?:[- ]?as)?(?:/([0-9\.]+([a-zA-Z0-9\.\-_]+)?))?", "JBoss Application Server", TechCategory.WEB_SERVERS, "JBoss Application Server"),
     (r"glassfish(?:/([0-9\.]+))?", "GlassFish", TechCategory.WEB_SERVERS, "Java EE reference application server"),
     (r"big-?ip", "F5 BIG-IP", TechCategory.INFRASTRUCTURE, "F5 BIG-IP Application Delivery Controller"),
     (r"f5-trafficshield", "F5 BIG-IP TrafficShield", TechCategory.SECURITY, "F5 Web Application Firewall"),
@@ -41,7 +43,10 @@ POWERED_BY_PATTERNS = [
     (r"php(?:/([0-9\.]+))?", "PHP", TechCategory.LANGUAGES, "PHP Hypertext Preprocessor"),
     (r"asp\.net", "ASP.NET", TechCategory.FRAMEWORKS, "Microsoft .NET Web Platform"),
     (r"servlet(?:/([0-9\.]+))?", "Java Servlet", TechCategory.FRAMEWORKS, "Java Servlet Platform"),
-    (r"jboss(?:-as)?(?:/([0-9\.]+([a-zA-Z0-9\.\-_]+)?))?", "JBoss", TechCategory.WEB_SERVERS, "JBoss Application Server"),
+    (r"jsf(?:/([0-9\.]+))?", "JavaServer Faces (JSF)", TechCategory.FRAMEWORKS, "JavaServer Faces (JSF) Web Framework"),
+    (r"jsp(?:/([0-9\.]+))?", "JavaServer Pages (JSP)", TechCategory.FRAMEWORKS, "JavaServer Pages"),
+    (r"\bjboss[- ]?eap(?:/([0-9\.]+([a-zA-Z0-9\.\-_]+)?))?", "JBoss EAP", TechCategory.WEB_SERVERS, "Red Hat JBoss Enterprise Application Platform"),
+    (r"\bjboss(?![- ]?eap|\s+web)(?:[- ]?as)?(?:/([0-9\.]+([a-zA-Z0-9\.\-_]+)?))?", "JBoss Application Server", TechCategory.WEB_SERVERS, "JBoss Application Server"),
     (r"wildfly(?:/([0-9\.]+))?", "WildFly", TechCategory.WEB_SERVERS, "WildFly Application Server"),
     (r"undertow(?:/([0-9\.]+))?", "Undertow", TechCategory.WEB_SERVERS, "Lightweight blocking/non-blocking web server in Java"),
     (r"phusion passenger(?:/([0-9\.]+))?", "Phusion Passenger", TechCategory.WEB_SERVERS, "Web app server for Ruby/Python/Node"),
@@ -101,6 +106,12 @@ COOKIE_SIGNATURES = [
     ("__cf_bm", "Cloudflare", TechCategory.SECURITY, "Cloudflare Bot Management cookie"),
     ("lumclientid", "Lumis Experience Platform (LumisXP)", TechCategory.FRAMEWORKS, "LumisXP Enterprise Portal / DXP"),
     ("lumusersessionid", "Lumis Experience Platform (LumisXP)", TechCategory.FRAMEWORKS, "LumisXP Enterprise Portal session"),
+    ("auth_session_id", "Keycloak", TechCategory.SECURITY, "Keycloak authentication session cookie"),
+    ("auth_session_id_legacy", "Keycloak", TechCategory.SECURITY, "Keycloak authentication session cookie"),
+    ("kc_restart", "Keycloak", TechCategory.SECURITY, "Keycloak authentication restart cookie"),
+    ("keycloak_identity", "Keycloak", TechCategory.SECURITY, "Keycloak identity cookie"),
+    ("keycloak_session", "Keycloak", TechCategory.SECURITY, "Keycloak session cookie"),
+    ("kc_", "Keycloak", TechCategory.SECURITY, "Keycloak SSO cookie"),
 ]
 
 BODY_META_PATTERNS = [
@@ -153,6 +164,12 @@ SCRIPT_HEADER_VERSION_PATTERNS = {
     "Bootstrap": [
         r"/\*!\s*(?:\*\s*)?Bootstrap\s+v([0-9\.]+)",
         r"Bootstrap\s+v?([0-9\.]+)",
+        r"bootstrap[@/-]v?([0-9\.]+)",
+    ],
+    "Font Awesome": [
+        r"/\*!\s*Font Awesome(?:\s+Free)?\s+v?([0-9\.]+)",
+        r"(?:font-awesome|fontawesome)[a-zA-Z0-9_\-\./]*[/-]v?([0-9\.]+)",
+        r"@fortawesome/[a-z\-]+@([0-9\.]+)",
     ],
     "Axios": [
         r"/\*!\s*Axios\s+v?([0-9\.]+)",
@@ -475,7 +492,28 @@ BODY_CONTENT_PATTERNS = [
         "Bootstrap",
         TechCategory.FRAMEWORKS,
         "Bootstrap CSS & Component Library",
-        r'(?<![a-zA-Z0-9_\-])bootstrap[/-]([0-9]+\.[0-9]+(?:\.[0-9]+)?)(?:\.min)?\.(?:js|css)|Bootstrap\s+v?([0-9]+\.[0-9]+(?:\.[0-9]+)?)'
+        r'(?<![a-zA-Z0-9_\-])bootstrap[@/-]v?([0-9]+\.[0-9]+(?:\.[0-9]+)?)|Bootstrap\s+v?([0-9]+\.[0-9]+(?:\.[0-9]+)?)'
+    ),
+    (
+        r'(?:font-awesome[a-zA-Z0-9_\-\./]*|fontawesome[a-zA-Z0-9_\-\./]*|\bfa-[a-z0-9\-]+)',
+        "Font Awesome",
+        TechCategory.FRAMEWORKS,
+        "Font Awesome icon library and CSS toolkit",
+        r'(?:font-awesome|fontawesome)[a-zA-Z0-9_\-\./]*[/-]v?([0-9\.]+)|@fortawesome/[a-z\-]+@([0-9\.]+)'
+    ),
+    (
+        r'(?:/auth/realms/|/realms/[a-zA-Z0-9_\-]+/protocol/|keycloak(?:\.min)?\.js|\bkc-form\b|\bkc-feedback\b)',
+        "Keycloak",
+        TechCategory.SECURITY,
+        "Keycloak Open Source Identity and Access Management",
+        r'keycloak[/-]([0-9\.]+)'
+    ),
+    (
+        r'(?:pjeOffice(?:\.min)?\.js|pjeoffice-requisicao|\bpjeoffice\b)',
+        "PJeOffice",
+        TechCategory.OTHER,
+        "PJeOffice assinador digital para processos eletrônicos",
+        r'pjeOffice[/-]([0-9\.]+)'
     ),
     (
         r'(?:moment(?:\.min)?\.js|npm\.moment\b)',
@@ -590,7 +628,8 @@ SCRIPT_NAME_KEYWORDS = {
     "Ajax4jsf": ["ajax4jsf", "a4j"],
     "RichFaces": ["richfaces"],
     "PrimeFaces": ["primefaces"],
-    "Bootstrap": ["npm.bootstrap.", "bootstrap.bundle", "bootstrap.min.js", "bootstrap.js", "bundle-bs4"],
+    "Bootstrap": ["npm.bootstrap.", "bootstrap.bundle", "bootstrap.min.js", "bootstrap.js", "bundle-bs4", "bootstrap@"],
+    "Font Awesome": ["font-awesome", "fontawesome", "@fortawesome"],
     "Axios": ["npm.axios.", "axios.min.js", "axios.js"],
     "InfraPHP": ["infrautil", "infracookie"],
     "eproc (Processo Eletrônico)": ["infrautil"],
@@ -702,8 +741,44 @@ class HeaderDetector(BaseDetector):
                     )
                 )
 
-        # 1.5. Analisa Probe de Erro 404 para Servidores Ocultos (ex: JBoss Web, Tomcat)
+        # 1.5. Analisa Probe de Erro 404 para Servidores Ocultos (ex: JBoss Web, Tomcat) e Cabeçalhos
         probe_body = response_data.get("probe_404_body", "")
+        probe_headers: Dict[str, str] = {k.lower(): str(v) for k, v in response_data.get("probe_404_headers", {}).items()}
+
+        if probe_headers:
+            probe_server = probe_headers.get("server", "")
+            if probe_server:
+                for pattern, name, cat, desc in SERVER_PATTERNS:
+                    m = re.search(pattern, probe_server, re.IGNORECASE)
+                    if m:
+                        version = clean_version(m.group(1)) if m.groups() and m.group(1) else None
+                        items.append(
+                            TechItem(
+                                name=name,
+                                category=cat,
+                                version=version,
+                                source=f"HTTP 404 Header: Server ({probe_server})",
+                                confidence=0.98,
+                                description=desc,
+                            )
+                        )
+            probe_powered = probe_headers.get("x-powered-by", "")
+            if probe_powered:
+                for pattern, name, cat, desc in POWERED_BY_PATTERNS:
+                    m = re.search(pattern, probe_powered, re.IGNORECASE)
+                    if m:
+                        version = clean_version(m.group(1)) if m.groups() and m.group(1) else None
+                        items.append(
+                            TechItem(
+                                name=name,
+                                category=cat,
+                                version=version,
+                                source=f"HTTP 404 Header: X-Powered-By ({probe_powered})",
+                                confidence=0.98,
+                                description=desc,
+                            )
+                        )
+
         if probe_body:
             m_jboss = re.search(r"JBoss\s*Web/([0-9\.]+([a-zA-Z0-9\.\-_]+)?)", probe_body, re.IGNORECASE)
             if m_jboss:
@@ -806,7 +881,7 @@ class HeaderDetector(BaseDetector):
             "citrix_ns_id", "fortiwafsid", "bni__barracuda_lb_cookie", "bnis_", 
             "barra_counter_session", "incap_ses_", "visid_incap_", "ak_bmsc", 
             "bm_sz", "x-sl-compstate", "__cf_bm", "cf_clearance", "lumclientid", 
-            "lumusersessionid"
+            "lumusersessionid", "kc_", "auth_session_id"
         }
 
         for cookie_pattern, tech_name, cat, desc in COOKIE_SIGNATURES:
@@ -840,31 +915,39 @@ class HeaderDetector(BaseDetector):
                     )
                 )
 
-        # 5. Analisa HTML Body / Meta Tags / Scripts
-        if body:
-            # Meta tags de Generator
-            for pattern, tech_name, cat in BODY_META_PATTERNS:
-                m = re.search(pattern, body, re.IGNORECASE)
-                if m:
-                    ver = clean_version(m.group(1)) if m.groups() and m.group(1) else None
-                    items.append(
-                        TechItem(
-                            name=tech_name,
-                            category=cat,
-                            version=ver,
-                            source="HTML Meta Generator Tag",
-                            confidence=1.0,
-                            description=f"{tech_name} detected via meta generator",
+        # 5. Analisa HTML Body / Meta Tags / Scripts (resposta principal e sondagem de erro 404)
+        bodies_to_scan = [("HTML Body DOM / Script Signature", body)]
+        if probe_body:
+            bodies_to_scan.append(("HTTP 404 Response Body Signature", probe_body))
+
+        for source_label, content_text in bodies_to_scan:
+            if not content_text:
+                continue
+
+            # Meta tags de Generator (apenas no corpo principal)
+            if source_label == "HTML Body DOM / Script Signature":
+                for pattern, tech_name, cat in BODY_META_PATTERNS:
+                    m = re.search(pattern, content_text, re.IGNORECASE)
+                    if m:
+                        ver = clean_version(m.group(1)) if m.groups() and m.group(1) else None
+                        items.append(
+                            TechItem(
+                                name=tech_name,
+                                category=cat,
+                                version=ver,
+                                source="HTML Meta Generator Tag",
+                                confidence=1.0,
+                                description=f"{tech_name} detected via meta generator",
+                            )
                         )
-                    )
 
             # Patterns no código HTML / Scripts / Atributos
             for pattern, tech_name, cat, desc, ver_pattern in BODY_CONTENT_PATTERNS:
-                m = re.search(pattern, body, re.IGNORECASE)
+                m = re.search(pattern, content_text, re.IGNORECASE)
                 if m:
                     ver = None
                     if ver_pattern:
-                        vm = re.search(ver_pattern, body, re.IGNORECASE)
+                        vm = re.search(ver_pattern, content_text, re.IGNORECASE)
                         if vm:
                             for g in vm.groups():
                                 if g:
@@ -874,9 +957,9 @@ class HeaderDetector(BaseDetector):
                         ver = clean_version(m.group(1))
 
                     if tech_name == "Webpack" and not ver:
-                        if "webpackchunk" in body.lower():
+                        if "webpackchunk" in content_text.lower():
                             ver = "5"
-                        elif "webpackjsonp" in body.lower():
+                        elif "webpackjsonp" in content_text.lower():
                             ver = "4"
 
                     items.append(
@@ -884,7 +967,7 @@ class HeaderDetector(BaseDetector):
                             name=tech_name,
                             category=cat,
                             version=ver,
-                            source="HTML Body DOM / Script Signature",
+                            source=source_label,
                             confidence=0.9,
                             description=desc,
                         )
