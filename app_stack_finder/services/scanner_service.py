@@ -158,6 +158,8 @@ class ScannerService:
                 else:
                     raise proxy_err
 
+            effective_url = str(resp.url)
+            response_data["url"] = effective_url
             response_data["status_code"] = resp.status_code
             response_data["headers"] = dict(resp.headers)
             response_data["cookies"] = dict(resp.cookies)
@@ -165,10 +167,10 @@ class ScannerService:
 
             # 2. Probe para descobrir banners de servidores ocultos em páginas de erro 404 (root e contexto)
             probe_urls = [
-                urljoin(target_url, "/__app_stack_finder_probe_404__"),
+                urljoin(effective_url, "/__app_stack_finder_probe_404__"),
             ]
             # Se a URL tem subcaminho (ex: /guiasweb/...), sonda também o contexto da aplicação
-            app_context = target_url.split("?")[0]
+            app_context = effective_url.split("?")[0]
             if "/" in app_context.replace("://", ""):
                 parts = app_context.split("/")
                 if len(parts) > 3:
@@ -192,10 +194,10 @@ class ScannerService:
             for detector in self.detectors:
                 if detector.supports_url:
                     try:
-                        items = await detector.detect_url(target_url, response_data, client=client)
+                        items = await detector.detect_url(effective_url, response_data, client=client)
                         all_items.extend(items)
                     except TypeError:
-                        items = await detector.detect_url(target_url, response_data)
+                        items = await detector.detect_url(effective_url, response_data)
                         all_items.extend(items)
                     except Exception:
                         continue

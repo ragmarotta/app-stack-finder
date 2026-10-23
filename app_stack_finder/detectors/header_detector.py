@@ -125,7 +125,9 @@ SCRIPT_HEADER_VERSION_PATTERNS = {
     ],
     "jQuery UI": [
         r"/\*!\s*jQuery\s+UI[ -]v?([0-9\.]+)",
+        r"jQuery\s+UI(?:\s+:[a-zA-Z0-9_\-]+|\s+[a-zA-Z0-9_\-]+)?\s+v?([0-9\.]+)",
         r"jQuery\s+UI\s+v?([0-9\.]+)",
+        r"jquery-ui[/-]([0-9\.]+)",
     ],
     "jQuery EasyUI": [
         r"jQuery\s+EasyUI\s+v?([0-9\.]+)",
@@ -197,14 +199,24 @@ SCRIPT_HEADER_VERSION_PATTERNS = {
         r"glider(?:-js)?@([0-9\.]+)",
     ],
     "Moment.js": [
+        r'(?:moment|\.fn|\w)\.version\s*=\s*["\']([0-9\.]+)["\']',
         r"//! moment\.js\s*\n//! version\s*:\s*([0-9\.]+)",
         r"/\*!\s*version\s*:\s*([0-9\.]+).*momentjs\.com",
         r"moment\.js\s+v?([0-9\.]+)",
+        r"moment[/-]([0-9\.]+)",
     ],
     "Lodash": [
-        r"Lodash\s+<https://lodash\.com/>\s*\n\s*\*\s*Copyright.*?\n\s*\*\s*Version\s+([0-9\.]+)",
+        r'(?:\.VERSION|VERSION)\s*=\s*["\']([0-9\.]+)["\']',
+        r"Lodash\s+<https://lodash\.com/>[\s\S]*?Version\s+([0-9\.]+)",
         r"/\*!\s*lodash\s+v?([0-9\.]+)",
         r"lodash\s+([0-9\.]+)",
+        r"lodash[/-]([0-9\.]+)",
+    ],
+    "jsTree": [
+        r'jstree[a-zA-Z0-9_\.]*=\{version:[\"\']([0-9\.]+)[\"\']',
+        r'version:[\"\']([0-9\.]+)[\"\'],defaults:',
+        r"/\*!\s*jsTree\s+v?([0-9\.]+)",
+        r"jstree[/-]([0-9\.]+)",
     ],
     "Vue.js": [
         r"/\*!\s*Vue\.js\s+v([0-9\.]+)",
@@ -213,6 +225,12 @@ SCRIPT_HEADER_VERSION_PATTERNS = {
     "React": [
         r"/\*!\s*React\s+v([0-9\.]+)",
         r"React\s+v([0-9\.]+)",
+    ],
+    "Webpack": [
+        r"/\*!\s*webpack\s+v?([0-9\.]+)",
+        r"webpack[/-]([0-9\.]+)",
+        r"(webpackChunk)[a-zA-Z0-9_\-]+",
+        r"(webpackJsonp)",
     ],
 }
 
@@ -586,6 +604,7 @@ SCRIPT_NAME_KEYWORDS = {
     "Vue.js": ["vue"],
     "React": ["react"],
     "JavaServer Faces (JSF)": ["jsf"],
+    "Webpack": ["runtime.", "runtime~", "runtime-", "shared.", "main."],
 }
 
 
@@ -845,6 +864,12 @@ class HeaderDetector(BaseDetector):
                     elif m.groups() and m.group(1):
                         ver = clean_version(m.group(1))
 
+                    if tech_name == "Webpack" and not ver:
+                        if "webpackchunk" in body.lower():
+                            ver = "5"
+                        elif "webpackjsonp" in body.lower():
+                            ver = "4"
+
                     items.append(
                         TechItem(
                             name=tech_name,
@@ -899,29 +924,62 @@ class HeaderDetector(BaseDetector):
                     if target_script:
                         try:
                             resolved_src = urljoin(url, target_script)
+                            # 1. Faz requisição dos primeiros 32KB do script
                             script_resp = await client.get(
                                 resolved_src,
-                                headers={"Range": "bytes=0-1024"},
+                                headers={"Range": "bytes=0-32768"},
                                 timeout=4.0,
                             )
-                            chunk = script_resp.text[:2048]
+                            chunk = script_resp.text
                             # Suporte a arquivos .LICENSE.txt gerados pelo Webpack / Terser
-                            m_lic = re.search(r"For license information please see\s+([^\s\*]+\.LICENSE\.txt)", chunk, re.IGNORECASE)
+                            m_lic = re.search(r"For license information please see\s+([^\s\*]+\.LICENSE\.txt)", chunk[:2048], re.IGNORECASE)
                             if m_lic:
                                 lic_file = m_lic.group(1)
                                 try:
                                     lic_url = urljoin(resolved_src, lic_file)
                                     lic_resp = await client.get(lic_url, timeout=3.0)
-                                    chunk = lic_resp.text[:4096] + "\n" + chunk
+                                    chunk = lic_resp.text + "\n" + chunk
                                 except Exception:
                                     pass
 
+                            matched = False
                             for pat in patterns:
                                 vm = re.search(pat, chunk, re.IGNORECASE)
                                 if vm:
-                                    item.version = clean_version(vm.group(1))
+                                    raw_ver = vm.group(1)
+                                    if raw_ver.lower().startswith("webpackchunk"):
+                                        item.version = "5"
+                                    elif raw_ver.lower().startswith("webpackjsonp"):
+                                        item.version = "4"
+                                    else:
+                                        item.version = clean_version(raw_ver)
                                     item.source = f"{item.source} + Asset ({target_script})"
+                                    matched = True
                                     break
+
+                            # 2. Se não encontrou no início, busca no final do script (padrão de exportação UMD do Lodash e Moment)
+                            if not matched:
+                                try:
+                                    tail_resp = await client.get(
+                                        resolved_src,
+                                        headers={"Range": "bytes=-16384"},
+                                        timeout=3.0,
+                                    )
+                                    chunk_tail = tail_resp.text
+                                    for pat in patterns:
+                                        vm = re.search(pat, chunk_tail, re.IGNORECASE)
+                                        if vm:
+                                            raw_ver = vm.group(1)
+                                            if raw_ver.lower().startswith("webpackchunk"):
+                                                item.version = "5"
+                                            elif raw_ver.lower().startswith("webpackjsonp"):
+                                                item.version = "4"
+                                            else:
+                                                item.version = clean_version(raw_ver)
+                                            item.source = f"{item.source} + Asset ({target_script})"
+                                            break
+                                except Exception:
+                                    pass
                         except Exception:
                             pass
 

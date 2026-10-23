@@ -65,3 +65,43 @@ async def test_header_detector_dom_and_meta():
     assert "WordPress" in names
     assert names["WordPress"].version == "6.4.2"
     assert "Next.js" in names
+
+
+@pytest.mark.asyncio
+async def test_header_detector_webpack_and_assets():
+    detector = HeaderDetector()
+    mock_data = {
+        "headers": {},
+        "cookies": {},
+        "body": """
+        <html>
+        <head>
+            <script src="/eproc/js/dist/runtime.29e3254c61c00a76ae7c.js"></script>
+            <script src="/eproc/js/dist/npm.jstree.f1bc0f58dfe777fe3bbd.js"></script>
+        </head>
+        <body>
+            <script>self.webpackChunkeproc = [];</script>
+        </body>
+        </html>
+        """,
+    }
+
+    class MockClient:
+        async def get(self, url, headers=None, timeout=None):
+            class MockResp:
+                def __init__(self, text):
+                    self.text = text
+            if "runtime" in url:
+                return MockResp('self.webpackChunkeproc = [];')
+            elif "jstree" in url:
+                return MockResp('e.jstree={version:"3.3.15",defaults:{plugins:[]}};')
+            return MockResp("")
+
+    items = await detector.detect_url("https://example.com/eproc/", mock_data, client=MockClient())
+    names = {item.name: item for item in items}
+
+    assert "Webpack" in names
+    assert names["Webpack"].version == "5"
+
+    assert "jsTree" in names
+    assert names["jsTree"].version == "3.3.15"
