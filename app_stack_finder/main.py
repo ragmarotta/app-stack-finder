@@ -25,10 +25,21 @@ def handle_output(result: ScanResult, format_type: str, output_path: Optional[st
     """Exporta o resultado no formato selecionado e/ou salva em arquivo."""
     format_type = format_type.lower()
 
+    # Inferência inteligente: se o usuário passou arquivo .json ou .md sem especificar --format
+    if output_path and format_type == "rich":
+        if output_path.lower().endswith(".json"):
+            format_type = "json"
+        elif output_path.lower().endswith((".md", ".markdown")):
+            format_type = "markdown"
+
     if format_type == "json":
         output_content = reporter.to_json(result)
+        if not output_path:
+            click.echo(output_content)
     elif format_type in ("markdown", "md"):
         output_content = reporter.to_markdown(result)
+        if not output_path:
+            click.echo(output_content)
     else:  # rich
         output_content = None
         reporter.print_rich_report(result)
@@ -36,13 +47,11 @@ def handle_output(result: ScanResult, format_type: str, output_path: Optional[st
     if output_path:
         out_file = Path(output_path)
         out_file.parent.mkdir(parents=True, exist_ok=True)
-        # Se o formato foi rich mas o usuário especificou output file, gera markdown por padrão
+        # Fallback caso não seja json nem markdown
         if output_content is None:
             output_content = reporter.to_markdown(result)
         out_file.write_text(output_content, encoding="utf-8")
         console.print(f"[bold green]✔[/bold green] Relatório salvo com sucesso em: [cyan]{out_file.resolve()}[/cyan]")
-    elif output_content is not None:
-        click.echo(output_content)
 
 
 @click.group(invoke_without_command=True)
@@ -50,7 +59,15 @@ def handle_output(result: ScanResult, format_type: str, output_path: Optional[st
 @click.option("--update-rules", is_flag=True, help="Baixa e atualiza a base mais recente de assinaturas remotas (Webanalyze).")
 @click.pass_context
 def cli(ctx: click.Context, update_rules: bool) -> None:
-    """App Stack Finder: Análise profunda e fingerprinting de tecnologias, frameworks e infraestrutura."""
+    """App Stack Finder: Análise profunda e fingerprinting de tecnologias, frameworks e infraestrutura.
+
+    Exportação em JSON ou Markdown:
+      Use as flags -f (--format) e -o (--output) nos subcomandos scan, url, dir ou git.
+      Exemplos:
+        app-stack-finder scan https://exemplo.com -f json
+        app-stack-finder scan https://exemplo.com -f json -o resultado.json
+        app-stack-finder scan https://exemplo.com -o resultado.json (auto-detecta formato .json)
+    """
     if update_rules:
         updater = UpdaterService(console=console)
         updater.update_rules()
@@ -139,7 +156,7 @@ def scan_auto(
     # Caso não seja diretório existente e pareça domínio (ex: 'example.com')
     if "." in target and not Path(target).exists():
         with console.status(f"[bold cyan]Analisando endpoint {target}...[/bold cyan]"):
-            result = asyncio.run(scanner.scan_url(target, timeout=timeout, verify_ssl=not insecure))
+            result = asyncio.run(scanner.scan_url(target, timeout=timeout, verify_ssl=not insecure, no_proxy=no_proxy))
         handle_output(result, format_type, output_path)
         return
 
