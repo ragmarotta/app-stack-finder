@@ -169,7 +169,7 @@ class ScannerService:
             probe_urls = [
                 urljoin(effective_url, "/__app_stack_finder_probe_404__"),
             ]
-            # Se a URL tem subcaminho (ex: /guiasweb/...), sonda também o contexto da aplicação
+            # Se a URL tem subcaminho (ex: /app/...), sonda também o contexto da aplicação
             app_context = effective_url.split("?")[0]
             if "/" in app_context.replace("://", ""):
                 parts = app_context.split("/")

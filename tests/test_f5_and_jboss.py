@@ -23,9 +23,9 @@ async def test_f5_and_richfaces_detection():
         <html>
         <head>
             <script id="f5_cspm">(function(){var f5_cspm={};}())</script>
-            <script src="/rupe/a4j/g/3_3_3.Final/org/ajax4jsf/framework.pack.js.rupe"></script>
-            <script src="/rupe/a4j/g/3_3_3.Final/org/richfaces/ui.pack.js.rupe"></script>
-            <script src="/rupe/geral/scripts/jquery.maskedinput-1.3.min.js"></script>
+            <script src="/app/a4j/g/3_3_3.Final/org/ajax4jsf/framework.pack.js.action"></script>
+            <script src="/app/a4j/g/3_3_3.Final/org/richfaces/ui.pack.js.action"></script>
+            <script src="/app/scripts/jquery.maskedinput-1.3.min.js"></script>
         </head>
         <body>
             <div class="rf-p">Painel</div>
@@ -35,7 +35,7 @@ async def test_f5_and_richfaces_detection():
         "probe_404_body": "<html><head><title>JBoss Web/2.1.3.GA - Error report</title></head><body><h3>JBoss Web/2.1.3.GA</h3></body></html>",
     }
 
-    items = await detector.detect_url("https://mock-rupe.local", mock_data)
+    items = await detector.detect_url("https://mock-portal.local", mock_data)
     names = {item.name: item for item in items}
 
     # F5 BIG-IP
@@ -80,7 +80,7 @@ async def test_eproc_and_infraphp_detection():
         "body": """
         <html>
         <head>
-            <title>:: eproc - TJMG ::</title>
+            <title>:: eproc - Processo Eletronico ::</title>
             <script src="js/dist/runtime.29e3254c61c00a76ae7c.js"></script>
             <script src="js/dist/npm.axios.5be569efb5d72b6a3b1f.js"></script>
             <script src="js/dist/npm.bootstrap.83f4700d85eceac25b4a.js"></script>

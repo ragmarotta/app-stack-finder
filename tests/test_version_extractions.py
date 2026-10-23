@@ -11,8 +11,8 @@ def test_pom_xml_properties_and_framework_versions(tmp_path: Path):
     pom.write_text("""<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>br.jus.tjmg</groupId>
-    <artifactId>guiasweb</artifactId>
+    <groupId>com.sample.enterprise</groupId>
+    <artifactId>legacy-portal</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>

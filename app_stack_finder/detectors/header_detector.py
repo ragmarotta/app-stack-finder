@@ -718,12 +718,21 @@ class HeaderDetector(BaseDetector):
                         description="JBoss Web Server and Servlet Container",
                     )
                 )
+                jboss_as_ver = None
+                if v_jb:
+                    if v_jb.startswith(("2.", "3.")):
+                        jboss_as_ver = "5.x / EAP 5"
+                    elif v_jb.startswith("7."):
+                        jboss_as_ver = "7.x / EAP 6"
+                    elif v_jb.startswith("1."):
+                        jboss_as_ver = "4.x"
+
                 items.append(
                     TechItem(
                         name="JBoss Application Server",
                         category=TechCategory.WEB_SERVERS,
-                        version="5.x (EAP 5)",
-                        source="Inferred via JBoss Web 2.1.x stack",
+                        version=jboss_as_ver,
+                        source=f"Inferred via JBoss Web {v_jb or ''}".strip(),
                         confidence=0.9,
                         description="Red Hat JBoss Enterprise Application Platform",
                     )
