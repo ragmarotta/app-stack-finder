@@ -1,11 +1,12 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
+# Packaging / Distribution / Compilação Standalone
 build/
-develop-eggs/
 dist/
 downloads/
 eggs/
@@ -20,27 +21,47 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Virtual Environment
+# Virtual Environments
 .venv/
 venv/
 ENV/
 env/
+.env/
 
-# Pytest / Coverage
+# Pytest / Coverage / Tooling
 .pytest_cache/
 .coverage
 htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
 
-# IDEs
+# IDEs and Editors
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
+.project
+.pydevproject
+.settings/
 
-# Output test files
+# OS Generated
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Output / Reports
 *.log
+resultado.json
+relatorio.json
+relatorio.md
+stack-report.json
+*.report.json
+*.report.md
 
-# Remote signatures cache
+# Remote Signatures Cache (baixado sob demanda via --update-rules)
 app_stack_finder/data/technologies.json
 app_stack_finder/data/*.tmp

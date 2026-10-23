@@ -321,4 +321,4 @@ pytest -v
 
 ## 📄 Licença
 
-Distribuído sob a licença **MIT**. Consulte `pyproject.toml` para mais informações.
+Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para mais informações.

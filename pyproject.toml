@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "AntiGravity Team"}
+    {name = "ragmarotta"}
 ]
 keywords = [
     "stack-finder", "fingerprinting", "technology-detector", "devops", "ci-cd", "security", "sca"
