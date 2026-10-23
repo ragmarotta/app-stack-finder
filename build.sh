@@ -51,13 +51,30 @@ test_binary() {
     local bin_path="$1"
     echo ""
     echo -e "${BOLD}${CYAN}========================================================================${RESET}"
-    echo -e "${BOLD}${GREEN}  Testando Executável: ${bin_path} --help${RESET}"
+    echo -e "${BOLD}${GREEN}  Testando Executável Linux: ${bin_path} --help${RESET}"
     echo -e "${BOLD}${CYAN}========================================================================${RESET}"
     echo ""
     "$bin_path" --help
     echo ""
     echo -e "${BOLD}${CYAN}========================================================================${RESET}"
-    log_success "Executável respondeu ao comando --help com sucesso e exibiu todas as opções!"
+    log_success "Executável Linux respondeu ao comando --help com sucesso e exibiu todas as opções!"
+}
+
+test_binary_windows() {
+    local win_ps="/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"
+    if [ -f "$win_ps" ] && [ -f "dist/app-stack-finder.exe" ]; then
+        local win_exe
+        win_exe=$(wslpath -w "$PWD/dist/app-stack-finder.exe" 2>/dev/null || echo "dist\\app-stack-finder.exe")
+        echo ""
+        echo -e "${BOLD}${CYAN}========================================================================${RESET}"
+        echo -e "${BOLD}${GREEN}  Testando Executável Windows: ${win_exe} --help${RESET}"
+        echo -e "${BOLD}${CYAN}========================================================================${RESET}"
+        echo ""
+        < /dev/null "$win_ps" -NoProfile -NonInteractive -Command "& '$win_exe' --help"
+        echo ""
+        echo -e "${BOLD}${CYAN}========================================================================${RESET}"
+        log_success "Executável Windows (.exe) respondeu ao comando --help com sucesso e exibiu todas as opções!"
+    fi
 }
 
 build_linux() {
@@ -82,26 +99,43 @@ build_linux() {
 }
 
 build_windows() {
-    log_info "Compilação para Windows (.exe)..."
+    log_info "Compilação do executável nativo para Windows (.exe)..."
 
-    # Se Docker estiver disponível, tenta gerar via container wine
+    # Método 1: Se estiver rodando no WSL e o python do Windows estiver disponível
+    local win_ps="/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"
+    if [ -f "$win_ps" ] && < /dev/null "$win_ps" -NoProfile -NonInteractive -Command "python --version" &>/dev/null; then
+        log_info "Ambiente Windows detectado (WSL). Compilando app-stack-finder.exe via Python do Windows..."
+        local win_pwd
+        win_pwd=$(wslpath -w "$PWD" 2>/dev/null || echo "C:\\Projetos\\app-stack-finder")
+        < /dev/null "$win_ps" -NoProfile -NonInteractive -Command "Set-Location '$win_pwd'; python -m pip install -e . -q; python -m PyInstaller --noconfirm --clean app-stack-finder.spec"
+        
+        if [ -f "dist/app-stack-finder.exe" ]; then
+            log_success "Executável Windows gerado com sucesso em: dist/app-stack-finder.exe ($(du -h dist/app-stack-finder.exe | cut -f1))"
+            test_binary_windows
+            return 0
+        fi
+    fi
+
+    # Método 2: Se Docker estiver disponível, tenta gerar via container wine
     if command -v docker &>/dev/null && docker info &>/dev/null; then
         log_info "Docker detectado. Verificando possibilidade de compilar via container..."
         if docker run --rm -v "$PWD:/src" -w /src cdrx/pyinstaller-windows:python3 \
             "pip install -e . && pyinstaller --noconfirm --clean app-stack-finder.spec" 2>/dev/null; then
             if [ -f "dist/app-stack-finder.exe" ]; then
                 log_success "Executável Windows gerado via Docker em: dist/app-stack-finder.exe"
+                test_binary_windows
                 return 0
             fi
         fi
     fi
 
-    # Se Wine estiver instalado
+    # Método 3: Se Wine estiver instalado
     if command -v wine &>/dev/null && wine python --version &>/dev/null; then
         log_info "Wine detectado no sistema host. Compilando via Wine..."
         wine python -m PyInstaller --noconfirm --clean app-stack-finder.spec
         if [ -f "dist/app-stack-finder.exe" ]; then
             log_success "Executável Windows gerado via Wine em: dist/app-stack-finder.exe"
+            test_binary_windows
             return 0
         fi
     fi
